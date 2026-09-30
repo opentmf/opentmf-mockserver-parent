@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.12] - 2026-09-30
+
+### Security
+
+- **netty 4.2.16.Final → 4.2.18.Final** — fixes CRITICAL CVE-2026-75595 in
+  `netty-handler` (fixed in 4.2.17.Final), present in the published
+  `ghcr.io/opentmf/opentmf-mockserver:2.1.11` image.
+- **Jackson 3.2.1 → 3.2.3** (`jackson-bom`) — fixes HIGH CVE-2026-68497 in
+  `tools.jackson.core:jackson-databind` (fixed in 3.2.2).
+
+Trivy (HIGH/CRITICAL, fixable, fresh DB 2026-09-29): 2.1.11 image 1 CRITICAL +
+1 HIGH → 2.1.12 image 0.
+
+### Changed
+
+- Dependency bumps: netty-tcnative 2.0.84.Final, Bouncy Castle 1.86,
+  nimbus-jose-jwt 10.10, json-schema-validator 3.0.7, commons-lang3 3.21.0,
+  commons-codec 1.22.1, Guava 33.7.2-jre, ClassGraph 4.8.196, SLF4J 2.0.20,
+  JUnit Jupiter 6.1.3.
+- `opentmf-mockserver-test-support` compiles against Spring Framework 6.2.19
+  and Spring Boot 3.5.16 (patch bumps within the existing lines; both remain
+  `provided`/optional, so consumers keep their own versions).
+- Build plugins: maven-compiler 3.16.0, surefire/failsafe 3.6.0, maven-jar
+  3.5.1, maven-deploy 3.2.0, exec-maven 3.6.4, sonar-maven 5.8.0.7211; Trivy
+  scanner image in the `docker` profile 0.74.0.
+
 ## [2.1.11] - 2026-07-30
 
 ### Fixed
