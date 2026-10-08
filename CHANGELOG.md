@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fails startup with the path in the message instead of loading a silently empty set. The JSON
   initializer is unchanged. `jackson-dataformat-yaml` (already on the classpath transitively) is
   now a declared dependency.
+- **Release images are scanned before they are pushed, and signed.** `release-image.yml` now
+  builds each architecture natively, once, into an archive, runs the Trivy gate on it (Trivy
+  0.75.0, HIGH/CRITICAL, `--ignore-unfixed`, `.trivyignore` — the same settings as the local
+  `docker` profile) and pushes that same archive by digest only if the gate passes. A merge
+  job assembles the tagged index and signs the index digest with keyless cosign. Verify with
+  `cosign verify ghcr.io/opentmf/opentmf-mockserver@<digest> --certificate-identity-regexp
+  '^https://github.com/opentmf/opentmf-mockserver-parent/' --certificate-oidc-issuer
+  https://token.actions.githubusercontent.com`. All actions are pinned by commit SHA.
+
 ### Changed
 
 - **A failed startup exits with status 1.** The CLI previously logged the startup exception and
