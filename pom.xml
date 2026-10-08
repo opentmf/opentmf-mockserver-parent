@@ -257,12 +257,12 @@
               </goals>
             </execution>
             <execution>
-              <!-- Bound to prepare-package (not verify) so the XML report is written
-                   BEFORE the sonar profile's phase-bound sonar-scan runs at verify.
-                   Otherwise Sonar's JaCoCo importer reads a not-yet-generated file
-                   on the last module and undercounts coverage. -->
+              <!-- Bound to post-integration-test (not verify) so the XML report is
+                   written BEFORE the sonar profile's phase-bound sonar-scan runs at
+                   verify, and AFTER failsafe's *IT run, so IT coverage is in it.
+                   prepare-package would precede integration-test and drop it. -->
               <id>report</id>
-              <phase>prepare-package</phase>
+              <phase>post-integration-test</phase>
               <goals>
                 <goal>report</goal>
               </goals>
