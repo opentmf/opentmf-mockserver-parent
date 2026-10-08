@@ -276,10 +276,13 @@ The path supports globs (e.g. `/config/expectations-*.json`), so you can split b
 multiple files. Set `MOCKSERVER_WATCH_INITIALIZATION_JSON=true` to hot-reload the file on change
 without restarting the server.
 
+A configured path that matches no file, or a file that does not parse, fails startup (exit
+status 1) with the path in the message -- unlike upstream MockServer, which warns and starts
+without those expectations. With the watcher on, a bad edit is logged and skipped.
+
 The same document can be written as YAML (so it can carry comments) and loaded with
-`MOCKSERVER_INITIALIZATION_YAML_PATH`; both paths may be set together. A YAML path that matches
-no file or does not parse fails startup instead of being skipped, and the YAML file is not
-watched. See [the README](../README.md#initializing-expectations-from-a-file-json-or-yaml).
+`MOCKSERVER_INITIALIZATION_YAML_PATH`; both paths may be set together, with the same strict
+startup behaviour. The YAML file is not watched. See [the README](../README.md#initializing-expectations-from-a-file-json-or-yaml).
 
 ### 4. Create a Resource
 

@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `mockserver.initializationJsonPath`: the same expectation document, written as YAML so it can
   carry comments, parsed into the same expectation model. Both paths may be set; globs are
   supported. A YAML path that matches no file, or a file that does not parse into expectations,
-  fails startup with the path in the message instead of loading a silently empty set. The JSON
-  initializer is unchanged. `jackson-dataformat-yaml` (already on the classpath transitively) is
+  fails startup with the path in the message instead of loading a silently empty set.
+  `jackson-dataformat-yaml` (already on the classpath transitively) is
   now a declared dependency.
 - **Release images are scanned before they are pushed, and signed.** `release-image.yml` now
   builds each architecture natively, once, into an archive, runs the Trivy gate on it (Trivy
@@ -28,6 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Behaviour change vs upstream MockServer: a bad `initializationJsonPath` now fails startup.**
+  A configured JSON path that matches no file, or a file that does not parse into expectations,
+  used to be logged as a warning and skipped, so a typo'd or unmounted path started the server
+  with zero expectations from it. It now fails startup by name, like the YAML path
+  (`failed to load JSON initialization file "<path>" (mockserver.initializationJsonPath): ...`),
+  and exits 1. An unset path is still a no-op, and an existing empty file still loads nothing
+  (so persisting to the initialization file itself keeps working on first boot).
+  Hot reloads through `watchInitializationJson` stay lenient: a bad edit is logged and skipped.
 - **A failed startup exits with status 1.** The CLI previously logged the startup exception and
   exited 0, so a container whose startup failed (for example a bad
   `mockserver.initializationYamlPath`) ended as "Completed" instead of crash-looping.

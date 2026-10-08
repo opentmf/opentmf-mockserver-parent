@@ -140,16 +140,22 @@ docker run -p 1080:1080 \
   ghcr.io/opentmf/opentmf-mockserver:<version>
 ```
 
-The two initializers differ in how they treat a bad file:
+Both initializers are strict at startup. A configured path (or glob) that matches no file, or a
+file that does not parse into expectations, **fails startup** with the format, the path and the
+property in the message, e.g.
+`failed to load JSON initialization file "<path>" (mockserver.initializationJsonPath): ...`.
+The process exits with status 1, so a container crash-loops; it never comes up with a silently
+empty expectation set. An unset path is simply not loaded, and a file that exists but is empty
+(or `[]`) loads no expectations -- which keeps `persistExpectations` working when it persists to
+the initialization file itself.
 
-- **YAML** — a path (or glob) that matches no file, or a file that does not parse into
-  expectations, **fails startup** with the path in the message
-  (`failed to load YAML initialization file "<path>" (mockserver.initializationYamlPath): ...`).
-  The process exits with status 1, so a container crash-loops; it never comes up with a silently
-  empty expectation set. The YAML file is not watched;
-  restart to pick up changes.
-- **JSON** — unchanged MockServer behaviour: a missing or invalid file is logged as a warning and
-  skipped. `MOCKSERVER_WATCH_INITIALIZATION_JSON=true` hot-reloads it on change.
+> **Behaviour change vs upstream MockServer (2.1.13):** upstream logs a missing or invalid
+> `initializationJsonPath` as a warning and starts with zero expectations from it. This build
+> fails startup instead.
+
+`MOCKSERVER_WATCH_INITIALIZATION_JSON=true` hot-reloads the JSON file on change; a bad edit
+picked up by the watcher is logged as a warning and does not stop the running server. The YAML
+file is not watched; restart to pick up changes.
 
 See [Initializing Expectations from a JSON File](opentmf-mockserver/MOCKSERVER.md#initializing-expectations-from-a-json-file)
 for a complete callback bundle for one TMF domain.

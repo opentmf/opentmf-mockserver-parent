@@ -998,6 +998,9 @@ public class Configuration {
    * href="https://app.swaggerhub.com/apis/jamesdbloom/mock-server-openapi/5.15.x#/Expectations"
    * target="_blank">REST API format</a>
    *
+   * <p>opentmf: a path that matches no file, or a file that does not parse into expectations,
+   * fails startup with the path in the message (upstream MockServer logs a warning and skips it).
+   *
    * <p>To watch multiple files use a file globs as documented here:
    * https://mock-server.com/mock_server/initializing_expectations.html#expectation_initializer_json_glob_patterns
    *
@@ -1021,9 +1024,9 @@ public class Configuration {
    * holds the same expectation document as {@link #initializationJsonPath(String)}, written as YAML
    * (so it may carry comments). File globs are supported.
    *
-   * <p>Unlike the JSON initializer, a path that matches no file, or a file that does not parse into
-   * expectations, fails startup with the path in the message instead of being ignored. The YAML
-   * file is not watched for changes.
+   * <p>As with the JSON initializer, a path that matches no file, or a file that does not parse
+   * into expectations, fails startup with the path in the message instead of being ignored. The
+   * YAML file is not watched for changes.
    *
    * <p>The default is null
    *
