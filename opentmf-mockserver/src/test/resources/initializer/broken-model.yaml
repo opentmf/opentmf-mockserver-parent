@@ -1,0 +1,3 @@
+# valid YAML, but statusCode is not an integer: not an expectation
+- httpRequest: { method: GET, path: /broken }
+  httpResponse: { statusCode: two-hundred }

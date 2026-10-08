@@ -122,6 +122,8 @@ public class ConfigurationProperties {
   private static final String MOCKSERVER_INITIALIZATION_CLASS = "mockserver.initializationClass";
   private static final String MOCKSERVER_INITIALIZATION_JSON_PATH =
       "mockserver.initializationJsonPath";
+  private static final String MOCKSERVER_INITIALIZATION_YAML_PATH =
+      "mockserver.initializationYamlPath";
   private static final String MOCKSERVER_WATCH_INITIALIZATION_JSON =
       "mockserver.watchInitializationJson";
 
@@ -1138,6 +1140,29 @@ public class ConfigurationProperties {
    */
   public static void initializationJsonPath(String initializationJsonPath) {
     setProperty(MOCKSERVER_INITIALIZATION_JSON_PATH, initializationJsonPath);
+  }
+
+  public static String initializationYamlPath() {
+    return readPropertyHierarchically(
+        PROPERTIES, MOCKSERVER_INITIALIZATION_YAML_PATH, "MOCKSERVER_INITIALIZATION_YAML_PATH", "");
+  }
+
+  /**
+   * The path to the YAML file used to initialize expectations in MockServer at startup. The file
+   * holds the same expectation document as {@link #initializationJsonPath(String)}, written as YAML
+   * (so it may carry comments). File globs are supported.
+   *
+   * <p>Unlike the JSON initializer, a path that matches no file, or a file that does not parse into
+   * expectations, fails startup with the path in the message instead of being ignored. The YAML
+   * file is not watched for changes.
+   *
+   * <p>The default is null
+   *
+   * @param initializationYamlPath path to the YAML file used to initialize expectations in
+   *     MockServer at startup
+   */
+  public static void initializationYamlPath(String initializationYamlPath) {
+    setProperty(MOCKSERVER_INITIALIZATION_YAML_PATH, initializationYamlPath);
   }
 
   public static boolean watchInitializationJson() {

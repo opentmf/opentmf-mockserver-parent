@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.13] - 2026-10-08
+
+### Added
+
+- **YAML expectations initializer** ([#21](https://github.com/opentmf/opentmf-mockserver-parent/issues/21)).
+  New `mockserver.initializationYamlPath` (`MOCKSERVER_INITIALIZATION_YAML_PATH`) beside
+  `mockserver.initializationJsonPath`: the same expectation document, written as YAML so it can
+  carry comments, parsed into the same expectation model. Both paths may be set; globs are
+  supported. A YAML path that matches no file, or a file that does not parse into expectations,
+  fails startup with the path in the message instead of loading a silently empty set. The JSON
+  initializer is unchanged. `jackson-dataformat-yaml` (already on the classpath transitively) is
+  now a declared dependency.
+
 ## [2.1.12] - 2026-09-30
 
 ### Security

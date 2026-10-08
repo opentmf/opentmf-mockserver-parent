@@ -1,5 +1,6 @@
 package org.mockserver.server.initialize;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.mockserver.log.model.LogEntry.LogMessageType.SERVER_CONFIGURATION;
 import static org.slf4j.event.Level.*;
@@ -22,6 +23,7 @@ import org.mockserver.mock.RequestMatchers;
 import org.mockserver.mock.listeners.MockServerMatcherNotifier;
 import org.mockserver.mock.listeners.MockServerMatcherNotifier.Cause;
 import org.mockserver.serialization.ExpectationSerializer;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 /**
  * @author jamesdbloom
@@ -30,6 +32,7 @@ public class ExpectationInitializerLoader {
 
   private static final LRUCache<String, List<String>> EXPANDED_INITIALIZATION_JSON_PATHS =
       new LRUCache<>(new MockServerLogger(LRUCache.class), 10, TimeUnit.HOURS.toMillis(1));
+  private static final YAMLMapper YAML_MAPPER = new YAMLMapper();
   private final Configuration configuration;
   private final ExpectationSerializer expectationSerializer;
   private final MockServerLogger mockServerLogger;
@@ -63,6 +66,7 @@ public class ExpectationInitializerLoader {
 
   private void addExpectationsFromInitializer() {
     retrieveExpectationsFromJson();
+    retrieveExpectationsFromYaml();
     for (Expectation expectation : retrieveExpectationsFromInitializerClass()) {
       requestMatchers.add(expectation, new Cause("", Cause.Type.CLASS_INITIALISER));
     }
@@ -149,36 +153,12 @@ public class ExpectationInitializerLoader {
                           .setMessageFormat(initialLogMessage)
                           .setArguments(initializationJsonPath));
                 }
-                List<String> expectationIds = new ArrayList<>();
                 try {
                   String jsonExpectations =
                       FileReader.readFileFromClassPathOrPath(initializationJsonPath);
                   if (isNotBlank(jsonExpectations)) {
                     expectations =
-                        expectationSerializer.deserializeArray(
-                            jsonExpectations,
-                            true,
-                            (expectationString, deserialisedExpectations) -> {
-                              for (int i = 0; i < deserialisedExpectations.size(); i++) {
-                                int counter = 0;
-                                String expectationId;
-                                do {
-                                  expectationId =
-                                      UUID.nameUUIDFromBytes(
-                                              String.valueOf(
-                                                      Objects.hash(
-                                                          initializationJsonPath,
-                                                          expectationString,
-                                                          i,
-                                                          counter++))
-                                                  .getBytes(StandardCharsets.UTF_8))
-                                          .toString();
-                                } while (expectationIds.contains(expectationId) && counter < 50);
-                                expectationIds.add(expectationId);
-                                deserialisedExpectations.get(i).withIdIfNull(expectationId);
-                              }
-                              return deserialisedExpectations;
-                            });
+                        deserializeWithStableIds(initializationJsonPath, jsonExpectations);
                   }
                 } catch (Throwable throwable) {
                   if (MockServerLogger.isEnabled(WARN) && mockServerLogger != null) {
@@ -205,11 +185,77 @@ public class ExpectationInitializerLoader {
         .collect(Collectors.toList());
   }
 
+  private Expectation[] retrieveExpectationsFromYaml() {
+    String initializationYamlPath = configuration.initializationYamlPath();
+    if (isBlank(initializationYamlPath)) {
+      return new Expectation[0];
+    }
+    List<String> yamlPaths = FilePath.expandFilePathGlobs(initializationYamlPath);
+    if (yamlPaths.isEmpty()) {
+      throw new IllegalStateException(
+          "YAML initialization path \""
+              + initializationYamlPath
+              + "\" (mockserver.initializationYamlPath) matched no files");
+    }
+    List<Expectation> loaded = new ArrayList<>();
+    for (String yamlPath : yamlPaths) {
+      if (MockServerLogger.isEnabled(INFO) && mockServerLogger != null) {
+        mockServerLogger.logEvent(
+            new LogEntry()
+                .setType(SERVER_CONFIGURATION)
+                .setLogLevel(INFO)
+                .setMessageFormat("loading YAML initialization file:{}")
+                .setArguments(yamlPath));
+      }
+      Expectation[] expectations;
+      try {
+        String jsonExpectations =
+            YAML_MAPPER.readTree(FileReader.readFileFromClassPathOrPath(yamlPath)).toString();
+        expectations = deserializeWithStableIds(yamlPath, jsonExpectations);
+      } catch (Throwable throwable) {
+        throw new IllegalStateException(
+            "failed to load YAML initialization file \""
+                + yamlPath
+                + "\" (mockserver.initializationYamlPath): "
+                + throwable.getMessage(),
+            throwable);
+      }
+      requestMatchers.update(expectations, new Cause(yamlPath, Cause.Type.FILE_INITIALISER));
+      loaded.addAll(Arrays.asList(expectations));
+    }
+    return loaded.toArray(new Expectation[0]);
+  }
+
+  private Expectation[] deserializeWithStableIds(String path, String jsonExpectations) {
+    List<String> expectationIds = new ArrayList<>();
+    return expectationSerializer.deserializeArray(
+        jsonExpectations,
+        true,
+        (expectationString, deserialisedExpectations) -> {
+          for (int i = 0; i < deserialisedExpectations.size(); i++) {
+            int counter = 0;
+            String expectationId;
+            do {
+              expectationId =
+                  UUID.nameUUIDFromBytes(
+                          String.valueOf(Objects.hash(path, expectationString, i, counter++))
+                              .getBytes(StandardCharsets.UTF_8))
+                      .toString();
+            } while (expectationIds.contains(expectationId) && counter < 50);
+            expectationIds.add(expectationId);
+            deserialisedExpectations.get(i).withIdIfNull(expectationId);
+          }
+          return deserialisedExpectations;
+        });
+  }
+
   @VisibleForTesting
   public Expectation[] loadExpectations() {
     final Expectation[] expectationsFromInitializerClass =
         retrieveExpectationsFromInitializerClass();
     final Expectation[] expectationsFromJson = retrieveExpectationsFromJson();
-    return ArrayUtils.addAll(expectationsFromInitializerClass, expectationsFromJson);
+    return ArrayUtils.addAll(
+        ArrayUtils.addAll(expectationsFromInitializerClass, expectationsFromJson),
+        retrieveExpectationsFromYaml());
   }
 }

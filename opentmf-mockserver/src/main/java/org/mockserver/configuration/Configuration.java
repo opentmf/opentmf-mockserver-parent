@@ -83,6 +83,7 @@ public class Configuration {
   // mock initialization
   private String initializationClass;
   private String initializationJsonPath;
+  private String initializationYamlPath;
   private Boolean watchInitializationJson;
 
   // mock persistence
@@ -1005,6 +1006,32 @@ public class Configuration {
    */
   public Configuration initializationJsonPath(String initializationJsonPath) {
     this.initializationJsonPath = initializationJsonPath;
+    return this;
+  }
+
+  public String initializationYamlPath() {
+    if (initializationYamlPath == null) {
+      return ConfigurationProperties.initializationYamlPath();
+    }
+    return initializationYamlPath;
+  }
+
+  /**
+   * The path to the YAML file used to initialize expectations in MockServer at startup. The file
+   * holds the same expectation document as {@link #initializationJsonPath(String)}, written as YAML
+   * (so it may carry comments). File globs are supported.
+   *
+   * <p>Unlike the JSON initializer, a path that matches no file, or a file that does not parse into
+   * expectations, fails startup with the path in the message instead of being ignored. The YAML
+   * file is not watched for changes.
+   *
+   * <p>The default is null
+   *
+   * @param initializationYamlPath path to the YAML file used to initialize expectations in
+   *     MockServer at startup
+   */
+  public Configuration initializationYamlPath(String initializationYamlPath) {
+    this.initializationYamlPath = initializationYamlPath;
     return this;
   }
 
