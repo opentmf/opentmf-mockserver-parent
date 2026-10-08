@@ -1128,7 +1128,6 @@ public class ConfigurationProperties {
    * starts.
    *
    * <p>The expected format of the file is a JSON array of expectations, as per the <a
-   * target="_blank"
    * href="https://app.swaggerhub.com/apis/jamesdbloom/mock-server-openapi/5.15.x#/Expectations"
    * target="_blank">REST API format</a>
    *

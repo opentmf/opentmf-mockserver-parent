@@ -63,7 +63,7 @@ public class BCKeyAndCertificateFactory implements KeyAndCertificateFactory {
     this.mockServerLogger = mockServerLogger;
   }
 
-  /** build or generate & save ca private key and certificate */
+  /** build or generate &amp; save ca private key and certificate */
   @Override
   public void buildAndSaveCertificateAuthorityPrivateKeyAndX509Certificate() {
     if (dynamicallyUpdateCertificateAuthority() && certificateAuthorityCertificateNotYetCreated()) {
@@ -232,7 +232,7 @@ public class BCKeyAndCertificateFactory implements KeyAndCertificateFactory {
     return cert;
   }
 
-  /** build or generate & save leaf private key and certificate */
+  /** build or generate &amp; save leaf private key and certificate */
   @Override
   public void buildAndSavePrivateKeyAndX509Certificate() {
     if (customPrivateKeyAndCertificateProvided()) {
