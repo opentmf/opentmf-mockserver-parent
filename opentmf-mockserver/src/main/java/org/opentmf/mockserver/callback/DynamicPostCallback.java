@@ -44,6 +44,7 @@ import tools.jackson.databind.node.ObjectNode;
  *   <li>If state (or status) is not provided, sets the state value to the default initial. Here is
  *       the state value matrix that matches the configured path according to the type field: <br>
  *       <table style="border:1px solid #666; padding:4px">
+ *       <caption>Initial and final state per entity type</caption>
  *  <thead>
  *  <tr>
  *  <th>Type</th>

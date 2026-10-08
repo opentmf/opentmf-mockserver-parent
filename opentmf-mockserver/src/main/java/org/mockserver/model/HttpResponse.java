@@ -149,11 +149,11 @@ public class HttpResponse extends Action<HttpResponse>
   /**
    * Set the body to return for example:
    *
-   * <p>string body: - exact("<html><head/><body><div>a simple string body</div></body></html>");
+   * <p>string body: - {@code exact("<html><head/><body><div>a simple string body</div></body></html>")};
    *
    * <p>or
    *
-   * <p>- new StringBody("<html><head/><body><div>a simple string body</div></body></html>")
+   * <p>- {@code new StringBody("<html><head/><body><div>a simple string body</div></body></html>")}
    *
    * <p>binary body: -
    * binary(IOUtils.readFully(getClass().getClassLoader().getResourceAsStream("example.pdf"),
