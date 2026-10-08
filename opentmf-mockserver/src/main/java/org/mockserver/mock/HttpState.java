@@ -122,6 +122,7 @@ public class HttpState {
           new ExpectationFileSystemPersistence(configuration, mockServerLogger, requestMatchers);
     }
     if (isNotBlank(configuration.initializationJsonPath())
+        || isNotBlank(configuration.initializationYamlPath())
         || isNotBlank(configuration.initializationClass())) {
       ExpectationInitializerLoader expectationInitializerLoader =
           new ExpectationInitializerLoader(configuration, mockServerLogger, requestMatchers);

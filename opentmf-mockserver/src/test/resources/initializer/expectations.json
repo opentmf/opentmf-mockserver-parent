@@ -1,0 +1,20 @@
+[
+  {
+    "httpRequest": { "method": "POST", "path": "/cgi-bin/sendsms" },
+    "httpResponse": { "statusCode": 202 }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/customer/{id}",
+      "pathParameters": { "id": ["[0-9]+"] }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": { "Content-Type": ["application/json"] },
+      "body": { "type": "JSON", "json": { "id": "42", "name": "Ada" } }
+    },
+    "times": { "remainingTimes": 3, "unlimited": false },
+    "priority": 5
+  }
+]

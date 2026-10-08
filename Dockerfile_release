@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # --- Build the self-contained JAR + libs --------------------------------------
-FROM maven:3.9.9-eclipse-temurin-17 AS build
+FROM maven:3.9.16-eclipse-temurin-17 AS build
 WORKDIR /build
 COPY pom.xml .
 COPY opentmf-mockserver ./opentmf-mockserver

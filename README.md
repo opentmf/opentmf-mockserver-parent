@@ -101,6 +101,58 @@ java -Dmockserver.initializationClass=org.opentmf.mockserver.callback.JwksExpect
   org.mockserver.cli.Main -serverPort 1080
 ```
 
+### Initializing Expectations from a File (JSON or YAML)
+
+Expectations can be pre-loaded at startup from a file instead of being registered with
+`PUT /mockserver/expectation`. Two properties exist; set either or both (each is also readable
+as the environment variable in the second column):
+
+| Property                            | Environment variable                  | File content                       |
+|-------------------------------------|---------------------------------------|------------------------------------|
+| `mockserver.initializationJsonPath` | `MOCKSERVER_INITIALIZATION_JSON_PATH` | JSON array of expectations         |
+| `mockserver.initializationYamlPath` | `MOCKSERVER_INITIALIZATION_YAML_PATH` | the same document, written as YAML |
+
+Both files hold the expectation model the `PUT /mockserver/expectation` API accepts; YAML is
+parsed into exactly the same objects, so the two formats are interchangeable. The value of YAML
+is comments: a hand-maintained file standing in for several backends can say which backend a
+block belongs to and why a status code is expected. Both paths accept globs
+(e.g. `/config/expectations-*.yaml`).
+
+```yaml
+# --- SMS gateway (Kannel) ---------------------------------------------
+# 202, not 200: the gateway ACKs and delivers asynchronously.
+- httpRequest:  { method: POST, path: /cgi-bin/sendsms }
+  httpResponse: { statusCode: 202 }
+
+# --- TMF service ordering: dynamic callbacks --------------------------
+- httpRequest: { method: POST, path: /tmf-api/serviceOrdering/v4/serviceOrder }
+  httpResponseClassCallback:
+    callbackClass: org.opentmf.mockserver.callback.DynamicPostCallback
+- httpRequest: { method: GET, path: /tmf-api/serviceOrdering/v4/serviceOrder/.* }
+  httpResponseClassCallback:
+    callbackClass: org.opentmf.mockserver.callback.DynamicGetCallback
+```
+
+```shell
+docker run -p 1080:1080 \
+  -e MOCKSERVER_INITIALIZATION_YAML_PATH=/config/expectations.yaml \
+  -v /path/to/expectations.yaml:/config/expectations.yaml \
+  ghcr.io/opentmf/opentmf-mockserver:<version>
+```
+
+The two initializers differ in how they treat a bad file:
+
+- **YAML** — a path (or glob) that matches no file, or a file that does not parse into
+  expectations, **fails startup** with the path in the message
+  (`failed to load YAML initialization file "<path>" (mockserver.initializationYamlPath): ...`).
+  The server never comes up with a silently empty expectation set. The YAML file is not watched;
+  restart to pick up changes.
+- **JSON** — unchanged MockServer behaviour: a missing or invalid file is logged as a warning and
+  skipped. `MOCKSERVER_WATCH_INITIALIZATION_JSON=true` hot-reloads it on change.
+
+See [Initializing Expectations from a JSON File](opentmf-mockserver/MOCKSERVER.md#initializing-expectations-from-a-json-file)
+for a complete callback bundle for one TMF domain.
+
 ## Dynamic Callbacks
 
 All callbacks share these behaviors:
@@ -116,9 +168,9 @@ domain; each subsection below shows the registration call alongside the callback
 example exchange. The examples all use `/tmf-api/serviceOrdering/v4/serviceOrder` as the domain.
 
 > **Tip:** Instead of registering each expectation with `PUT /mockserver/expectation` after
-> startup, you can pre-load a batch from a JSON file via `MOCKSERVER_INITIALIZATION_JSON_PATH`.
-> See [Initializing Expectations from a JSON File](opentmf-mockserver/MOCKSERVER.md#initializing-expectations-from-a-json-file)
-> in MOCKSERVER.md for the file format and a complete example.
+> startup, you can pre-load a batch from a JSON or YAML file via
+> `MOCKSERVER_INITIALIZATION_JSON_PATH` / `MOCKSERVER_INITIALIZATION_YAML_PATH`. See
+> [Initializing Expectations from a File](#initializing-expectations-from-a-file-json-or-yaml).
 
 ### POST (DynamicPostCallback)
 

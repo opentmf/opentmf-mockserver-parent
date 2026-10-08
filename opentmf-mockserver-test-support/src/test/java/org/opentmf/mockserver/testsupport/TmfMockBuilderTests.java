@@ -6,6 +6,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -15,6 +17,7 @@ class TmfMockBuilderTests {
   static MockServerSupport mock = MockServerSupport.create();
 
   private static final HttpClient HTTP = HttpClient.newHttpClient();
+  private static final Pattern ID = Pattern.compile("\"id\":\"([^\"]+)\"");
 
   @Test
   void post_registersDynamicPostCallback_realHttpPostReturns201WithBodyEcho() throws Exception {
@@ -44,7 +47,9 @@ class TmfMockBuilderTests {
             .build(),
         HttpResponse.BodyHandlers.ofString());
     assertThat(post.statusCode()).isEqualTo(201);
-    String id = post.body().replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+    Matcher idMatcher = ID.matcher(post.body());
+    assertThat(idMatcher.find()).as("id in POST response %s", post.body()).isTrue();
+    String id = idMatcher.group(1);
 
     HttpResponse<String> get = HTTP.send(
         HttpRequest.newBuilder(URI.create(mock.baseUrl() + "/thing/" + id)).GET().build(),
@@ -63,7 +68,9 @@ class TmfMockBuilderTests {
             .POST(HttpRequest.BodyPublishers.ofString("{\"x\":1}"))
             .build(),
         HttpResponse.BodyHandlers.ofString());
-    String id = post.body().replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+    Matcher idMatcher = ID.matcher(post.body());
+    assertThat(idMatcher.find()).as("id in POST response %s", post.body()).isTrue();
+    String id = idMatcher.group(1);
 
     HttpResponse<String> del = HTTP.send(
         HttpRequest.newBuilder(URI.create(mock.baseUrl() + "/gone/" + id)).DELETE().build(),
@@ -92,7 +99,9 @@ class TmfMockBuilderTests {
             .POST(HttpRequest.BodyPublishers.ofString("{\"name\":\"before\"}"))
             .build(),
         HttpResponse.BodyHandlers.ofString());
-    String id = post.body().replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+    Matcher idMatcher = ID.matcher(post.body());
+    assertThat(idMatcher.find()).as("id in POST response %s", post.body()).isTrue();
+    String id = idMatcher.group(1);
 
     HttpResponse<String> put = HTTP.send(
         HttpRequest.newBuilder(URI.create(mock.baseUrl() + "/thing/" + id))
@@ -138,7 +147,9 @@ class TmfMockBuilderTests {
             .POST(HttpRequest.BodyPublishers.ofString("{\"a\":1}"))
             .build(),
         HttpResponse.BodyHandlers.ofString());
-    String id = post.body().replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+    Matcher idMatcher = ID.matcher(post.body());
+    assertThat(idMatcher.find()).as("id in POST response %s", post.body()).isTrue();
+    String id = idMatcher.group(1);
 
     HttpResponse<String> patch = HTTP.send(
         HttpRequest.newBuilder(URI.create(mock.baseUrl() + "/jp/" + id))
@@ -162,7 +173,9 @@ class TmfMockBuilderTests {
             .POST(HttpRequest.BodyPublishers.ofString("{\"a\":1,\"b\":2}"))
             .build(),
         HttpResponse.BodyHandlers.ofString());
-    String id = post.body().replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+    Matcher idMatcher = ID.matcher(post.body());
+    assertThat(idMatcher.find()).as("id in POST response %s", post.body()).isTrue();
+    String id = idMatcher.group(1);
 
     HttpResponse<String> patch = HTTP.send(
         HttpRequest.newBuilder(URI.create(mock.baseUrl() + "/mp/" + id))
@@ -194,7 +207,9 @@ class TmfMockBuilderTests {
             .POST(HttpRequest.BodyPublishers.ofString("{\"a\":1,\"b\":2}"))
             .build(),
         HttpResponse.BodyHandlers.ofString());
-    String id = post.body().replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+    Matcher idMatcher = ID.matcher(post.body());
+    assertThat(idMatcher.find()).as("id in POST response %s", post.body()).isTrue();
+    String id = idMatcher.group(1);
 
     // JSON Patch — no explicit .jsonPatch() call; crud() must have registered it.
     HttpResponse<String> jp = HTTP.send(
@@ -235,7 +250,9 @@ class TmfMockBuilderTests {
     // POST is registered on "/trail/" exactly; a request to "/trail/" (with trailing slash)
     // matches it.
     assertThat(post.statusCode()).isEqualTo(201);
-    String id = post.body().replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+    Matcher idMatcher = ID.matcher(post.body());
+    assertThat(idMatcher.find()).as("id in POST response %s", post.body()).isTrue();
+    String id = idMatcher.group(1);
 
     HttpResponse<String> get = HTTP.send(
         HttpRequest.newBuilder(URI.create(mock.baseUrl() + "/trail/" + id)).GET().build(),

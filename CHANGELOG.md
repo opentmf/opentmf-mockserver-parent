@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.13] - 2026-10-08
+
+### Added
+
+- **YAML expectations initializer** ([#21](https://github.com/opentmf/opentmf-mockserver-parent/issues/21)).
+  New `mockserver.initializationYamlPath` (`MOCKSERVER_INITIALIZATION_YAML_PATH`) beside
+  `mockserver.initializationJsonPath`: the same expectation document, written as YAML so it can
+  carry comments, parsed into the same expectation model. Both paths may be set; globs are
+  supported. A YAML path that matches no file, or a file that does not parse into expectations,
+  fails startup with the path in the message instead of loading a silently empty set. The JSON
+  initializer is unchanged. `jackson-dataformat-yaml` (already on the classpath transitively) is
+  now a declared dependency.
+
+### Changed
+
+- Dependency bumps: netty 4.2.19.Final, json-schema-validator 3.0.8, ClassGraph 4.8.197.
+- Build and release tooling: Trivy scanner image in the `docker` profile 0.75.0; release image
+  build stage `maven:3.9.16-eclipse-temurin-17`; `release-image.yml` actions moved to their
+  current majors (checkout v7, setup-qemu v4, setup-buildx v4, login v4, metadata v6,
+  build-push v7 — Node 24 runtimes; no inputs used by this workflow changed).
+
 ## [2.1.12] - 2026-09-30
 
 ### Security
