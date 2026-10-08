@@ -10,6 +10,7 @@ import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ArrayUtils;
 import org.mockserver.cache.LRUCache;
@@ -123,13 +124,15 @@ public class ExpectationInitializerLoader {
     return expectations;
   }
 
+  // opentmf: at startup a configured JSON path is strict, like the YAML one. The lenient
+  // retrieveExpectationsFromFile below stays for the file watcher's hot reload, where a
+  // bad edit must not take down a running server.
   private Expectation[] retrieveExpectationsFromJson() {
-    return retrieveExpectationsFromFile(
-            "loading JSON initialization file:{}",
-            "exception while loading JSON initialization file, ignoring file:{}",
-            "loaded expectations:{}from file:{}",
-            Cause.Type.FILE_INITIALISER)
-        .toArray(new Expectation[0]);
+    return retrieveExpectationsStrictly(
+        "JSON",
+        "mockserver.initializationJsonPath",
+        configuration.initializationJsonPath(),
+        content -> content);
   }
 
   public List<Expectation> retrieveExpectationsFromFile(
@@ -186,41 +189,68 @@ public class ExpectationInitializerLoader {
   }
 
   private Expectation[] retrieveExpectationsFromYaml() {
-    String initializationYamlPath = configuration.initializationYamlPath();
-    if (isBlank(initializationYamlPath)) {
+    return retrieveExpectationsStrictly(
+        "YAML",
+        "mockserver.initializationYamlPath",
+        configuration.initializationYamlPath(),
+        content -> YAML_MAPPER.readTree(content).toString());
+  }
+
+  /**
+   * Loads every file the configured path (or glob) names. An unset path is a no-op and an empty
+   * file loads nothing; a path that matches no file, or a file that does not parse into
+   * expectations, fails startup by name.
+   */
+  private Expectation[] retrieveExpectationsStrictly(
+      String format,
+      String property,
+      String configuredPath,
+      UnaryOperator<String> toJsonExpectations) {
+    if (isBlank(configuredPath)) {
       return new Expectation[0];
     }
-    List<String> yamlPaths = FilePath.expandFilePathGlobs(initializationYamlPath);
-    if (yamlPaths.isEmpty()) {
+    List<String> paths = FilePath.expandFilePathGlobs(configuredPath);
+    if (paths.isEmpty()) {
       throw new IllegalStateException(
-          "YAML initialization path \""
-              + initializationYamlPath
-              + "\" (mockserver.initializationYamlPath) matched no files");
+          format
+              + " initialization path \""
+              + configuredPath
+              + "\" ("
+              + property
+              + ") matched no files");
     }
     List<Expectation> loaded = new ArrayList<>();
-    for (String yamlPath : yamlPaths) {
+    for (String path : paths) {
       if (MockServerLogger.isEnabled(INFO) && mockServerLogger != null) {
         mockServerLogger.logEvent(
             new LogEntry()
                 .setType(SERVER_CONFIGURATION)
                 .setLogLevel(INFO)
-                .setMessageFormat("loading YAML initialization file:{}")
-                .setArguments(yamlPath));
+                .setMessageFormat("loading " + format + " initialization file:{}")
+                .setArguments(path));
       }
       Expectation[] expectations;
       try {
-        String jsonExpectations =
-            YAML_MAPPER.readTree(FileReader.readFileFromClassPathOrPath(yamlPath)).toString();
-        expectations = deserializeWithStableIds(yamlPath, jsonExpectations);
+        String content = FileReader.readFileFromClassPathOrPath(path);
+        // An existing but empty file loads nothing rather than failing: persistExpectations
+        // creates the (shared) persistence file empty before this loader runs on first boot.
+        expectations =
+            isBlank(content)
+                ? new Expectation[0]
+                : deserializeWithStableIds(path, toJsonExpectations.apply(content));
       } catch (Throwable throwable) {
         throw new IllegalStateException(
-            "failed to load YAML initialization file \""
-                + yamlPath
-                + "\" (mockserver.initializationYamlPath): "
+            "failed to load "
+                + format
+                + " initialization file \""
+                + path
+                + "\" ("
+                + property
+                + "): "
                 + throwable.getMessage(),
             throwable);
       }
-      requestMatchers.update(expectations, new Cause(yamlPath, Cause.Type.FILE_INITIALISER));
+      requestMatchers.update(expectations, new Cause(path, Cause.Type.FILE_INITIALISER));
       loaded.addAll(Arrays.asList(expectations));
     }
     return loaded.toArray(new Expectation[0]);

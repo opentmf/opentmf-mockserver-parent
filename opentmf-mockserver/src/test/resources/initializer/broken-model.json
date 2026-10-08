@@ -1,0 +1,6 @@
+[
+  {
+    "httpRequest": { "method": "GET", "path": "/broken" },
+    "httpResponse": { "statusCode": "two-hundred" }
+  }
+]
