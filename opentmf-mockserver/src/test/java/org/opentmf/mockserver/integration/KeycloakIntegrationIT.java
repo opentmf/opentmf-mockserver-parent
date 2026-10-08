@@ -38,7 +38,7 @@ class KeycloakIntegrationIT {
   @SuppressWarnings("resource")
   @Container
   static final GenericContainer<?> keycloak =
-      new GenericContainer<>("quay.io/keycloak/keycloak:24.0")
+      new GenericContainer<>("quay.io/keycloak/keycloak:26.7.2")
           .withExposedPorts(8080)
           .withCopyFileToContainer(
               MountableFile.forClasspathResource("keycloak-test-realm.json"),

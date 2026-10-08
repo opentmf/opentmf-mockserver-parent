@@ -145,7 +145,8 @@ The two initializers differ in how they treat a bad file:
 - **YAML** — a path (or glob) that matches no file, or a file that does not parse into
   expectations, **fails startup** with the path in the message
   (`failed to load YAML initialization file "<path>" (mockserver.initializationYamlPath): ...`).
-  The server never comes up with a silently empty expectation set. The YAML file is not watched;
+  The process exits with status 1, so a container crash-loops; it never comes up with a silently
+  empty expectation set. The YAML file is not watched;
   restart to pick up changes.
 - **JSON** — unchanged MockServer behaviour: a missing or invalid file is logged as a warning and
   skipped. `MOCKSERVER_WATCH_INITIALIZATION_JSON=true` hot-reloads it on change.
