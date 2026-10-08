@@ -17,9 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fails startup with the path in the message instead of loading a silently empty set. The JSON
   initializer is unchanged. `jackson-dataformat-yaml` (already on the classpath transitively) is
   now a declared dependency.
-
 ### Changed
 
+- **A failed startup exits with status 1.** The CLI previously logged the startup exception and
+  exited 0, so a container whose startup failed (for example a bad
+  `mockserver.initializationYamlPath`) ended as "Completed" instead of crash-looping.
 - Dependency bumps: netty 4.2.19.Final, json-schema-validator 3.0.8, ClassGraph 4.8.197.
 - Build and release tooling: Trivy scanner image in the `docker` profile 0.75.0; release image
   build stage `maven:3.9.16-eclipse-temurin-17`; `release-image.yml` actions moved to their

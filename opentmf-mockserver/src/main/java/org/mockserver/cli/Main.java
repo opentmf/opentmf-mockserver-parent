@@ -11,6 +11,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.function.IntConsumer;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.configuration.IntegerStringListParser;
 import org.mockserver.log.model.LogEntry;
@@ -98,6 +99,9 @@ public class Main {
       new IntegerStringListParser();
   static PrintStream systemErr = System.err;
   static PrintStream systemOut = System.out;
+  // opentmf: a failed startup exits non-zero so a container crash-loops instead of
+  // ending as "Completed"; replaceable in tests, like systemOut / systemErr.
+  static IntConsumer exit = System::exit;
   static boolean usageShown = false;
 
   /**
@@ -246,6 +250,7 @@ public class Main {
         new RuntimeException("exception while starting: " + throwable.getMessage())
             .printStackTrace(System.err);
       }
+      exit.accept(1);
     }
   }
 
