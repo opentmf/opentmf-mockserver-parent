@@ -25,6 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that is not an integer below the node count (default 1024) now makes id generation answer 500
   instead.
 
+### Fixed
+
+- **`MockServerSupport.start()` no longer races for its port.** It probed a free port with
+  `PortFactory.findFreePort()` and bound it afterwards, so under parallel builds another process
+  could take the port in between and the start failed with `BindException: Address already in
+  use` (seen in 2 of 68 downstream gates). It now binds port 0 and reads back the port MockServer
+  actually bound (`ClientAndServer.getLocalPort()`); `port()` and `baseUrl()` are unchanged for
+  callers.
+
 ## [2.1.13] - 2026-10-08
 
 ### Added
