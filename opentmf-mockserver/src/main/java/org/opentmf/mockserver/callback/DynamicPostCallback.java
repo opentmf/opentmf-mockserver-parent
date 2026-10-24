@@ -18,6 +18,7 @@ import org.mockserver.model.MediaType;
 import org.opentmf.mockserver.model.RequestContext;
 import org.opentmf.mockserver.token.TokenEnforcer;
 import org.opentmf.mockserver.util.IdempotencyGuard;
+import org.opentmf.mockserver.util.InvalidIdFormatException;
 import org.opentmf.mockserver.util.JacksonUtil;
 import org.opentmf.mockserver.util.PayloadCache;
 import tools.jackson.databind.node.ObjectNode;
@@ -36,7 +37,10 @@ import tools.jackson.databind.node.ObjectNode;
  *       the query parameters like <code>?version=XYZ</code>
  *   <li>If <code>id</code> and `<code>version</code> (if versioned entity) is provided, checks if
  *       that exists in the payload cache. Returns 400 if so.
- *   <li>Uses either the provided id, or generates a new id for the posted payload.
+ *   <li>Uses either the provided id, or generates a new id for the posted payload. A generated id
+ *       is a bare TSID unless environment variable ID_FORMATS (per resource domain) or
+ *       ID_FORMAT_DEFAULT configures another format (see {@code IdGenerator}). A malformed format
+ *       returns 500.
  *   <li>If a versioned entity and version is not provided, sets <code>"version": "0"</code>.
  *   <li>Adds createdBy, createdDate and revision fields. Overrides if they are already provided.
  *   <li>Removes updatedDate and updatedBy, if they are provided in the payload.
@@ -120,7 +124,11 @@ public class DynamicPostCallback implements ExpectationResponseCallback {
 
     RequestContext ctx = RequestContext.initialize(httpRequest, false, parsedBody);
 
-    prepareForCache(ctx, parsedBody);
+    try {
+      prepareForCache(ctx, parsedBody);
+    } catch (InvalidIdFormatException e) {
+      return getErrorResponse(HttpStatusCode.INTERNAL_SERVER_ERROR_500, e.getMessage());
+    }
 
     // Atomic insert-if-absent closes the check-then-put race two concurrent POSTs with the
     // same client-supplied id used to hit (both saw the id absent, both reached CACHE.put,

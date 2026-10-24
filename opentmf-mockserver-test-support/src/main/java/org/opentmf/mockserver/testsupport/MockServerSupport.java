@@ -9,7 +9,6 @@ import org.mockserver.client.MockServerClient;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
-import org.mockserver.socket.PortFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -103,13 +102,19 @@ public class MockServerSupport
     return sharedInstance;
   }
 
-  /** Start MockServer on a random free port. Idempotent — subsequent calls are no-ops. */
+  /**
+   * Start MockServer on a random free port. Idempotent — subsequent calls are no-ops.
+   *
+   * <p>Binds port 0 and reads back the port the OS assigned. Probing for a free port first and
+   * binding it afterwards left a window in which another process could take the port, failing the
+   * start with a {@code BindException} under parallel builds.
+   */
   public MockServerSupport start() {
     if (server != null && server.isRunning()) {
       return this;
     }
-    port = PortFactory.findFreePort();
-    server = ClientAndServer.startClientAndServer(port);
+    server = ClientAndServer.startClientAndServer(0);
+    port = server.getLocalPort();
     LOG.info("MockServerSupport started on port {}", port);
     return this;
   }

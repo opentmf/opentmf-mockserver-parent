@@ -427,8 +427,8 @@ class OrchestrateE2eIT {
 
   @BeforeAll
   static void startMock() {
-    port = PortFactory.findFreePort();
-    server = ClientAndServer.startClientAndServer(port);
+    port = PortFactory.findFreePort();                  // probe, then bind: another process
+    server = ClientAndServer.startClientAndServer(port); // can take the port in between
     server.when(...)
           .respond(new DynamicPostCallback());
     // + 20 lines of JWKS wiring, TokenUtil, DynamicPropertyRegistry glue

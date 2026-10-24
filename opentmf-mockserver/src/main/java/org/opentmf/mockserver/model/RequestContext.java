@@ -3,13 +3,13 @@ package org.opentmf.mockserver.model;
 import static org.opentmf.mockserver.model.TmfConstants.ID;
 import static org.opentmf.mockserver.model.TmfConstants.VERSION;
 
-import io.hypersistence.tsid.TSID;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import org.apache.commons.lang3.StringUtils;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.Parameters;
+import org.opentmf.mockserver.util.IdGenerator;
 import org.opentmf.mockserver.util.PathExtractor;
 import tools.jackson.databind.JsonNode;
 
@@ -83,7 +83,7 @@ public class RequestContext {
   public void generateNewIdIfNecessary() {
     if (id == null) {
       id = new Id();
-      id.setId(TSID.Factory.getTsid().toString());
+      id.setId(IdGenerator.generate(domain));
       if (isVersioned()) {
         id.setVersion("0");
       }
