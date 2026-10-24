@@ -18,6 +18,7 @@ import org.opentmf.mockserver.model.Id;
 import org.opentmf.mockserver.model.RequestContext;
 import org.opentmf.mockserver.token.TokenEnforcer;
 import org.opentmf.mockserver.util.IdempotencyGuard;
+import org.opentmf.mockserver.util.InvalidIdFormatException;
 import org.opentmf.mockserver.util.JacksonUtil;
 import org.opentmf.mockserver.util.PayloadCache;
 import tools.jackson.databind.JsonNode;
@@ -124,7 +125,11 @@ public class DynamicJsonPatchCollectionCallback implements ExpectationResponseCa
       }
       ObjectNode value = (ObjectNode) op.get(VALUE).deepCopy();
       RequestContext ctx = RequestContext.initialize(httpRequest, false, value);
-      DynamicPostCallback.prepareForCache(ctx, value);
+      try {
+        DynamicPostCallback.prepareForCache(ctx, value);
+      } catch (InvalidIdFormatException e) {
+        return getErrorResponse(HttpStatusCode.INTERNAL_SERVER_ERROR_500, e.getMessage());
+      }
       plan.add(new PreparedItem(ctx, value));
     }
     return null;

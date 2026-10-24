@@ -803,7 +803,9 @@ paths:
       description: |
         Creates a new resource in the domain derived from the path. Generates `id`, `href`,
         `createdDate`, `createdBy`, `revision`, and the initial state/status field automatically.
-        Returns **400** if a resource with the same `id` already exists.
+        A generated `id` is a 13-character TSID unless the `ID_FORMATS` / `ID_FORMAT_DEFAULT`
+        environment variables configure another format for the domain; a malformed format answers
+        **500**. Returns **400** if a resource with the same `id` already exists.
 
         **Callback:** `DynamicPostCallback`
       parameters:
@@ -849,6 +851,12 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "422":
           description: "`Idempotency-Key` was previously used on a different `(method, path)`"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "`ID_FORMATS`, `ID_FORMAT_DEFAULT` or `TSID_NODE` is malformed, so no id can be generated; the message names the bad entry"
           content:
             application/json:
               schema:
@@ -1003,6 +1011,12 @@ paths:
                 $ref: "#/components/schemas/Error"
         "422":
           description: "`Idempotency-Key` was previously used on a different `(method, path)`"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "`ID_FORMATS`, `ID_FORMAT_DEFAULT` or `TSID_NODE` is malformed, so no id can be generated; the message names the bad entry"
           content:
             application/json:
               schema:

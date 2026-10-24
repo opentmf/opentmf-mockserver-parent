@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.14] - 2026-10-24
+
+### Added
+
+- **Configurable format for generated ids.** A POST (or a collection PATCH `add`) without an `id`
+  still gets a bare 13-character TSID by default. Two new environment variables change that:
+  `ID_FORMATS`, a comma-separated list of `<domain>=<template>` entries per resource domain
+  (`document` for `/document`), and `ID_FORMAT_DEFAULT` for every other domain. A template carries
+  exactly one placeholder: `{tsid}` (the TSID string), `{tsidNumber}` (the same TSID as a decimal
+  number) or `{uuid}` (a random UUID, also written as the bare keyword `uuid`). For example
+  `ID_FORMATS=document=urn:example:document-id:{tsidNumber}` stores and answers
+  `urn:example:document-id:828947152345672773`, and `GET /document/<that id>` returns it.
+  A client-supplied `id` is always kept as given. A malformed setting is never ignored: every
+  request that would generate an id answers 500 and names the bad entry.
+- **The TSID node is validated.** hypersistence-tsid already takes the node from `TSID_NODE`
+  (`-Dtsid.node`) and the node count from `TSID_NODE_COUNT` (`-Dtsid.node.count`), but it silently
+  wraps an out-of-range node and falls back to a random one for a non-numeric value. A `TSID_NODE`
+  that is not an integer below the node count (default 1024) now makes id generation answer 500
+  instead.
+
 ## [2.1.13] - 2026-10-08
 
 ### Added

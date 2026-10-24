@@ -193,7 +193,8 @@ curl -s -X PUT http://localhost:1080/mockserver/expectation \
 
 **Behavior:**
 
-- Generates a UUID `id` if not provided; returns 400 if the ID already exists.
+- Generates an `id` if not provided (a 13-character TSID by default; see
+  [Generated ids](#generated-ids)); returns 400 if the ID already exists.
 - Sets `createdDate`, `createdBy`, `revision`, `href`, and the initial state field.
 - Sets `version="0"` for versioned entities if not provided.
 - Returns **201 Created**.
@@ -956,6 +957,10 @@ the dotted-path parser; the dots would be interpreted as path separators.
 | `CACHE_DURATION_MILLIS`               | `7200000` (2h)               | Payload cache TTL in milliseconds                                 |
 | `ADDITIONAL_FIELDS`                   | --                           | Comma-separated `key` or `key=value` pairs added to POST payloads |
 | `CONTENT_RANGE_OFFSET_BASE`           | `1`                          | `0` or `1` -- base for Content-Range offset calculation           |
+| `ID_FORMAT_DEFAULT`                   | `{tsid}`                     | Template for generated ids of every domain without an `ID_FORMATS` entry; `uuid` = `{uuid}`. See [Generated ids](#generated-ids) |
+| `ID_FORMATS`                          | --                           | Comma-separated `<domain>=<template>` overrides for generated ids. See [Generated ids](#generated-ids) |
+| `TSID_NODE`                           | random                       | TSID node id (hypersistence-tsid's own setting, also `-Dtsid.node`); `0`..`TSID_NODE_COUNT`-1 |
+| `TSID_NODE_COUNT`                     | `1024`                       | TSID node count (hypersistence-tsid's own setting, also `-Dtsid.node.count`) |
 | `MOCKSERVER_INITIALIZATION_JSON_PATH` | --                           | Path (or glob) to a JSON file with an array of expectations to load on startup |
 | `MOCKSERVER_WATCH_INITIALIZATION_JSON`| `false`                      | `true` to hot-reload the initialization file when it changes      |
 | `KEYCLOAK_CONFIG`                     | `/config/keycloak-mock.json` | Path to Keycloak mock configuration JSON                          |
@@ -968,6 +973,39 @@ the dotted-path parser; the dots would be interpreted as path separators.
 | `ROLES_PUT`                           | `writer,admin`               | Comma-separated roles accepted on PUT. Empty = skip role check    |
 | `ROLES_PATCH`                         | `writer,admin`               | Comma-separated roles accepted on PATCH (merge / JSON Patch / collection). Empty = skip role check |
 | `ROLES_DELETE`                        | `admin`                      | Comma-separated roles accepted on DELETE. Empty = skip role check |
+
+## Generated ids
+
+When a POST (or a collection PATCH `add`) carries no `id`, the mock generates one from a
+template with exactly one placeholder:
+
+| Placeholder    | Generates                                                        |
+|----------------|------------------------------------------------------------------|
+| `{tsid}`       | the 13-character Crockford TSID string, e.g. `0S0ZK5X580M5M` (the default) |
+| `{tsidNumber}` | the same TSID as a decimal number, e.g. `828947152345672773`     |
+| `{uuid}`       | a random UUID; the bare keyword `uuid` means the same            |
+
+The template for a domain is its `ID_FORMATS` entry if there is one, else `ID_FORMAT_DEFAULT`,
+else `{tsid}`. The domain is the request path without its leading slash, exactly as the cache
+keys it (`document` for `/document`, `tmf-api/serviceOrdering/v4/serviceOrder` for
+`/tmf-api/serviceOrdering/v4/serviceOrder`). A client-supplied `id` is always kept as given.
+
+```shell
+docker run -p 1080:1080 \
+  -e ID_FORMATS='document=urn:example:document-id:{tsidNumber},party=uuid' \
+  ghcr.io/opentmf/opentmf-mockserver:<version>
+```
+
+A `POST /document` then answers `"id": "urn:example:document-id:828947152345672773"`, and
+`GET /document/urn:example:document-id:828947152345672773` returns it; a `POST /party` gets a
+UUID; every other domain keeps the bare TSID.
+
+A malformed setting is never ignored: a template without exactly one placeholder, with an unknown
+`{...}` placeholder, or containing `/`, `?`, `#`, whitespace or `:(version=` (each of which would
+break the GET by id), a duplicated domain, or a `TSID_NODE` that is not an integer below
+`TSID_NODE_COUNT`, makes every request that generates an id answer **500** naming the bad entry.
+The `TSID_NODE` check exists because hypersistence-tsid itself silently wraps an out-of-range
+node and ignores a non-numeric one.
 
 ## Content-Range Calculations
 
