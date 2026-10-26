@@ -34,6 +34,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   actually bound (`ClientAndServer.getLocalPort()`); `port()` and `baseUrl()` are unchanged for
   callers.
 
+### Changed
+
+- Dependency bumps: Jackson 3.2.4, commons-codec 1.23.0, ClassGraph 4.8.199 (the last 4.x).
+- Build and release tooling: surefire and failsafe 3.6.1, central-publishing-maven-plugin 0.12.0,
+  Trivy scanner image 0.76.1 (the `docker` profile and `release-image.yml`); `release-image.yml`
+  actions login v4.7.0, upload-artifact v7.0.2, download-artifact v8.0.2.
+- Held at their current major: Spring Framework 6.2 / Spring Boot 3.5 and Testcontainers 1.21
+  (held by Gökhan).
+- ClassGraph held at 4.8.199 (coordinator, 2026-10-26): the project and image are JDK 17;
+  ClassGraph 6.x is JDK 25+ only, 5.0.0 is an incompatible interim API; port `FilePath` at the
+  JDK 25 move.
+
 ## [2.1.13] - 2026-10-08
 
 ### Added

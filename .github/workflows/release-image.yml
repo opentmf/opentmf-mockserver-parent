@@ -31,7 +31,7 @@ env:
   IMAGE: opentmf/opentmf-mockserver
   RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
   # Same scanner and settings as the local `docker` profile's trivy-gate.
-  TRIVY_IMAGE: aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
+  TRIVY_IMAGE: aquasec/trivy:0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c
   SKOPEO_IMAGE: quay.io/skopeo/stable:v1.22.3@sha256:92e2b4fc45571c2e6e76e8c74a3d43ed53336ab4f1c4ad39dc6f89ae0bb6b077
 
 jobs:
@@ -116,7 +116,7 @@ jobs:
             "$SCAN_REF"
 
       - name: Login to GHCR with PAT
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6  # v4.7.0
         with:
           registry: ${{ env.REGISTRY }}
           username: gokhanus
@@ -166,7 +166,7 @@ jobs:
           touch "${{ runner.temp }}/digests/${DIGEST#sha256:}"
 
       - name: Upload the digest
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: digest-${{ matrix.target.arch }}
           path: ${{ runner.temp }}/digests/*
@@ -181,7 +181,7 @@ jobs:
       id-token: write   # keyless cosign sign (Fulcio OIDC)
     steps:
       - name: Login to GHCR with PAT
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6  # v4.7.0
         with:
           registry: ${{ env.REGISTRY }}
           username: gokhanus
@@ -205,7 +205,7 @@ jobs:
             type=raw,value=latest
 
       - name: Download the digests
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           path: ${{ runner.temp }}/digests
           pattern: digest-*
