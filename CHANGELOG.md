@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.15] - 2026-10-26
+
+### Fixed
+
+- `release-image.yml` pinned `quay.io/skopeo/stable:v1.22.3` by a digest quay.io no longer
+  serves (the mutable tag was rebuilt), so the 2.1.14 release run failed before pushing any image.
+  It now pins `v1.22.3-immutable` by digest.
+
+### Changed
+
+- Build tooling: jacoco-maven-plugin 0.8.16.
+
 ## [2.1.14] - 2026-10-26
 
 ### Added
