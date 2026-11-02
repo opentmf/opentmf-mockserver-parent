@@ -35,6 +35,11 @@ tags:
   - name: TMF Resources
     description: Dynamic CRUD for TMF-630 resources (callback-backed)
 
+# Every operation requires the Keycloak mock's bearer token (enforced when `ENFORCE_TOKEN=true`),
+# except the OIDC discovery and token endpoints below, which are anonymous by design.
+security:
+  - bearer: [ ]
+
 paths:
   # ═══════════════════════════════════════════════════════════════════════════
   #  MockServer control plane
@@ -317,6 +322,7 @@ paths:
     get:
       tags: [ Keycloak Mock ]
       operationId: getGlobalJwks
+      security: [ ]   # anonymous by design: OIDC discovery / token endpoint
       summary: Global JWKS
       description: Returns the JSON Web Key Set containing the RSA public key used to sign all JWTs.
       responses:
@@ -331,6 +337,7 @@ paths:
     get:
       tags: [ Keycloak Mock ]
       operationId: getOidcDiscovery
+      security: [ ]   # anonymous by design: OIDC discovery / token endpoint
       summary: OIDC discovery document
       description: |
         Returns the OpenID Connect discovery document for the given realm, including
@@ -349,6 +356,7 @@ paths:
     get:
       tags: [ Keycloak Mock ]
       operationId: getRealmJwks
+      security: [ ]   # anonymous by design: OIDC discovery / token endpoint
       summary: Realm JWKS
       description: Returns the JWKS for the specified realm (same keys as the global endpoint).
       parameters:
@@ -365,6 +373,7 @@ paths:
     post:
       tags: [ Keycloak Mock ]
       operationId: issueToken
+      security: [ ]   # anonymous by design: OIDC discovery / token endpoint
       summary: Issue a token
       description: |
         OAuth 2.0 token endpoint. Supports `client_credentials`, `password`, and `refresh_token`
