@@ -5,9 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.1.15] - 2026-10-26
+## [2.1.15] - 2026-11-02
 
 ### Fixed
+
+- The served OpenAPI declares its security: `security: [bearer]` at the document level (the control
+  plane requires the Keycloak mock's bearer token when `ENFORCE_TOKEN=true`; the scheme was already
+  defined) and `security: []` on the four OIDC discovery/token endpoints, which are anonymous by design.
+  `redocly lint` (recommended ruleset) goes from 14 `security-defined` errors to 0; no operation,
+  parameter or schema changes. Consumers that vendor the served `/mockserver/openapi` can take the file
+  from this release.
 
 - `release-image.yml` pinned `quay.io/skopeo/stable:v1.22.3` by a digest quay.io no longer
   serves (the mutable tag was rebuilt), so the 2.1.14 release run failed before pushing any image.
@@ -15,7 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Build tooling: jacoco-maven-plugin 0.8.16.
+- Dependency currency at release: netty-tcnative 2.0.85.Final; build tooling: jacoco-maven-plugin 0.8.16,
+  maven-enforcer-plugin 3.7.0.
+- Held, by name: Spring Boot 3.5.16 / Spring Framework 6.2.19 — the newest lines (Boot 4.1.x,
+  Framework 7.0.x) are a major migration of the mock server, taken as its own change, not as a
+  release bump; classgraph 4.8.199 — 6.x is compiled for a newer Java than the Java 17 this build
+  requires, so it moves with that migration.
 
 ## [2.1.14] - 2026-10-26
 
