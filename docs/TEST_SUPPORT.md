@@ -469,6 +469,14 @@ that used `create()` before the previous JVM released the port. Usually
 transient; a rerun clears it. If you're stuck with it, switch to `shared()` —
 the port is picked once per JVM and released only at shutdown.
 
+**`IllegalStateException: MOCKSERVER-SUPPORT-PORT-SHADOW-1`** — the start failed
+because every port MockServer bound was answered on `localhost` by another process.
+On macOS a server listening on `127.0.0.1` can share its port with MockServer's
+wildcard bind, and loopback requests then go to that server. After each start the
+support sends `PUT /mockserver/status` to its own `baseUrl()`; a port that does not
+answer as this mock is released and a new one bound, up to three times. If you see
+this error, look for the loopback listener (`lsof -nP -iTCP:<port> -sTCP:LISTEN`).
+
 **Test A's expectations still visible in test B (same class).** You probably
 enabled `keepExpectationsBetweenTests()` and forgot. Without it, `afterEach`
 resets everything.

@@ -1,5 +1,7 @@
 package org.opentmf.mockserver.testsupport;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -57,6 +59,9 @@ public class MockServerSupport
 
   private static final Logger LOG = LoggerFactory.getLogger(MockServerSupport.class);
 
+  /** How often {@link #start()} binds a new port when the bound one is shadowed. */
+  static final int MAX_START_ATTEMPTS = 3;
+
   @SuppressWarnings("java:S3077") // DCL singleton — volatile+synchronized is correct here.
   private static volatile MockServerSupport sharedInstance;
 
@@ -108,15 +113,41 @@ public class MockServerSupport
    * <p>Binds port 0 and reads back the port the OS assigned. Probing for a free port first and
    * binding it afterwards left a window in which another process could take the port, failing the
    * start with a {@code BindException} under parallel builds.
+   *
+   * <p>The bound port is then checked: a {@code PUT /mockserver/status} to {@link #baseUrl()} must
+   * be answered by this server. On macOS the wildcard bind can share its port with another
+   * process listening on 127.0.0.1, and loopback requests then reach that process instead of the
+   * mock. A shadowed port is released and the start retried on a new one, up to {@value
+   * #MAX_START_ATTEMPTS} attempts; after that the start fails with an {@link
+   * IllegalStateException} naming {@code MOCKSERVER-SUPPORT-PORT-SHADOW-1}.
    */
   public MockServerSupport start() {
     if (server != null && server.isRunning()) {
       return this;
     }
-    server = ClientAndServer.startClientAndServer(0);
-    port = server.getLocalPort();
-    LOG.info("MockServerSupport started on port {}", port);
-    return this;
+    List<Integer> shadowedPorts = new ArrayList<>();
+    for (int attempt = 1; attempt <= MAX_START_ATTEMPTS; attempt++) {
+      ClientAndServer candidate = ClientAndServer.startClientAndServer(0);
+      int boundPort = candidate.getLocalPort();
+      if (PortIdentityProbe.answersAsMockServer(baseUrl(boundPort), boundPort)) {
+        server = candidate;
+        port = boundPort;
+        LOG.info("MockServerSupport started on port {}", port);
+        return this;
+      }
+      candidate.stop();
+      shadowedPorts.add(boundPort);
+      LOG.warn(
+          "MockServerSupport port {} on localhost is answered by another listener (attempt {}/{})",
+          boundPort,
+          attempt,
+          MAX_START_ATTEMPTS);
+    }
+    throw new IllegalStateException(
+        "MOCKSERVER-SUPPORT-PORT-SHADOW-1: every port MockServer bound ("
+            + shadowedPorts
+            + ") is answered on localhost by another listener, not by this mock server; "
+            + "another process listens on 127.0.0.1 on that port");
   }
 
   /** Stop MockServer if running. Idempotent. */
@@ -143,6 +174,10 @@ public class MockServerSupport
 
   /** {@code http://localhost:<port>} — the base URL of the mock. */
   public String baseUrl() {
+    return baseUrl(port);
+  }
+
+  private static String baseUrl(int port) {
     return "http://localhost:" + port;
   }
 

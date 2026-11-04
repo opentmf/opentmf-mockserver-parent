@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.16] - 2026-11-04
+
+### Fixed
+
+- **`MockServerSupport.start()` detects a shadowed port.** On macOS, MockServer's wildcard bind
+  can share its port with another process that listens on `127.0.0.1` on the same port. Requests
+  to `baseUrl()` then reached that process, got its 404, and nothing reported the collision (seen
+  in about 2 % of full downstream builds on a host with many loopback listeners). After binding,
+  the support now sends `PUT /mockserver/status` to its own `baseUrl()` and expects this server's
+  status listing the bound port. A port that answers otherwise is released and a new one bound,
+  up to three attempts. After that the start fails with an `IllegalStateException` naming
+  `MOCKSERVER-SUPPORT-PORT-SHADOW-1` and the ports tried.
+
+### Changed
+
+- Dependency currency: Netty 4.2.20.Final, Guava 33.8.0-jre, json-schema-validator 3.0.9.
+- Held, by name (unchanged): Spring Boot 3.5.16 / Spring Framework 6.2.19, Testcontainers 1.21.4
+  and classgraph 4.8.199. Each is the newest of its line; the next lines are major migrations.
+
 ## [2.1.15] - 2026-11-02
 
 ### Fixed
