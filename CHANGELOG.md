@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.17] - 2026-11-09
+
+### Fixed
+
+- **The port-shadow WARN names what answered.** In 2.1.16, `MockServerSupport.start()` logged
+  "answered by another listener" for every failed identity probe, so a log could not tell a
+  foreign process from a connection that was refused, reset or timed out. The probe now returns a
+  typed outcome: `MOCK_SERVER`, `FOREIGN_ANSWER` (a non-200, or a status without the bound port),
+  `UNPARSABLE` (a 200 that is not a MockServer status), `REFUSED`, `RESET` or `TIMEOUT`. The WARN
+  for each attempt names it, with the HTTP status and the start of the body, or the exception and
+  its root cause, plus the elapsed time. Refused and reset are told apart by the exception's cause
+  chain, because the JDK `HttpClient` throws a `ConnectException` for both: a refusal has no
+  message, a reset says "Connection reset by peer". The final `MOCKSERVER-SUPPORT-PORT-SHADOW-1`
+  exception lists every port and its outcome. The probe's exception is still logged at DEBUG. The
+  retry behaviour is unchanged: any outcome other than `MOCK_SERVER` releases the port and binds a
+  new one, at most three times.
+
+### Changed
+
+- Dependency currency: Jackson 3.3.0, Trivy 0.76.2 (the `docker` profile scan and the release
+  gate), `docker/login-action` v4.8.0, `sigstore/cosign-installer` v4.1.3.
+- Held, by name (unchanged): Spring Boot 3.5.16 / Spring Framework 6.2.19, Testcontainers 1.21.4
+  and classgraph 4.8.199. Each is the newest of its line; the next lines are major migrations.
+
 ## [2.1.16] - 2026-11-04
 
 ### Fixed

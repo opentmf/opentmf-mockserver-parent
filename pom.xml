@@ -60,7 +60,7 @@
     <java.version>17</java.version>
 
     <!-- Core runtime -->
-    <jackson.version>3.2.4</jackson.version>
+    <jackson.version>3.3.0</jackson.version>
     <netty.version>4.2.20.Final</netty.version>
     <netty-tcnative.version>2.0.85.Final</netty-tcnative.version>
     <bouncycastle.version>1.86</bouncycastle.version>
@@ -116,7 +116,7 @@
     <!-- Trivy image used by the `docker` profile scan executions. Pin the exact
          scanner version so local runs match CI runs and shift only on deliberate
          bumps. -->
-    <trivy.image.version>0.76.1</trivy.image.version>
+    <trivy.image.version>0.76.2</trivy.image.version>
   </properties>
 
   <dependencyManagement>

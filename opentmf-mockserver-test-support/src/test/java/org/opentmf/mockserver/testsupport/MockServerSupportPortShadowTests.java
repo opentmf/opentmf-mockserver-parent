@@ -9,12 +9,17 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 
 import com.sun.net.httpserver.HttpServer;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,7 +63,7 @@ class MockServerSupportPortShadowTests {
   @Test
   void start_whenTheBoundPortIsShadowed_restartsOnAPortThatAnswersAsThisMock() throws Exception {
     AtomicInteger calls = new AtomicInteger();
-    try (MockedStatic<ClientAndServer> starter = shadowFirst(calls, 1)) {
+    try (MockedStatic<ClientAndServer> starter = shadowFirst(calls, 1, shadowedPort)) {
       MockServerSupport support = MockServerSupport.create();
       try {
         assertThat(support.port()).isPositive().isNotEqualTo(shadowedPort);
@@ -80,18 +85,64 @@ class MockServerSupportPortShadowTests {
   @Test
   void start_whenEveryAttemptIsShadowed_failsWithANamedReason() {
     AtomicInteger calls = new AtomicInteger();
-    try (MockedStatic<ClientAndServer> starter = shadowFirst(calls, Integer.MAX_VALUE)) {
+    try (MockedStatic<ClientAndServer> starter =
+        shadowFirst(calls, Integer.MAX_VALUE, shadowedPort)) {
       assertThatThrownBy(MockServerSupport::create)
           .isInstanceOf(IllegalStateException.class)
           .hasMessageContaining("MOCKSERVER-SUPPORT-PORT-SHADOW-1")
-          .hasMessageContaining(String.valueOf(shadowedPort));
+          .hasMessageContaining(String.valueOf(shadowedPort))
+          .hasMessageContaining("FOREIGN_ANSWER (HTTP 404");
       assertThat(calls).hasValue(MockServerSupport.MAX_START_ATTEMPTS);
       assertThat(started).allSatisfy(server -> assertThat(server.isRunning()).isFalse());
     }
   }
 
-  /** The first {@code shadowed} starts report the foreign listener's port; later ones are real. */
-  private MockedStatic<ClientAndServer> shadowFirst(AtomicInteger calls, int shadowed) {
+  @Test
+  void start_whenTheBoundPortIsShadowed_warnsWithTheForeignStatus() {
+    AtomicInteger calls = new AtomicInteger();
+    try (MockedStatic<ClientAndServer> starter = shadowFirst(calls, 1, shadowedPort)) {
+      String log = stderrOf(() -> MockServerSupport.create().stop());
+
+      assertThat(log)
+          .contains("port " + shadowedPort)
+          .contains("FOREIGN_ANSWER (HTTP 404")
+          .contains("attempt 1/" + MockServerSupport.MAX_START_ATTEMPTS);
+    }
+  }
+
+  @Test
+  void start_whenTheBoundPortRefuses_warnsWithTheRefusal() throws IOException {
+    int refusingPort;
+    try (ServerSocket released = new ServerSocket(0)) {
+      refusingPort = released.getLocalPort();
+    }
+    AtomicInteger calls = new AtomicInteger();
+    try (MockedStatic<ClientAndServer> starter = shadowFirst(calls, 1, refusingPort)) {
+      String log = stderrOf(() -> MockServerSupport.create().stop());
+
+      assertThat(log)
+          .contains("port " + refusingPort)
+          .contains("REFUSED (ConnectException")
+          .doesNotContain("FOREIGN_ANSWER");
+    }
+  }
+
+  /** slf4j-simple writes to the current {@code System.err} on every call. */
+  private static String stderrOf(Runnable action) {
+    PrintStream original = System.err;
+    ByteArrayOutputStream captured = new ByteArrayOutputStream();
+    System.setErr(new PrintStream(captured, true, StandardCharsets.UTF_8));
+    try {
+      action.run();
+    } finally {
+      System.setErr(original);
+    }
+    return captured.toString(StandardCharsets.UTF_8);
+  }
+
+  /** The first {@code shadowed} starts report {@code reportedPort}; later ones are real. */
+  private MockedStatic<ClientAndServer> shadowFirst(
+      AtomicInteger calls, int shadowed, int reportedPort) {
     MockedStatic<ClientAndServer> starter = mockStatic(ClientAndServer.class, CALLS_REAL_METHODS);
     starter
         .when(() -> ClientAndServer.startClientAndServer(any(Integer[].class)))
@@ -103,7 +154,7 @@ class MockServerSupportPortShadowTests {
                 return real;
               }
               ClientAndServer shadowedServer = spy(real);
-              doReturn(shadowedPort).when(shadowedServer).getLocalPort();
+              doReturn(reportedPort).when(shadowedServer).getLocalPort();
               return shadowedServer;
             });
     return starter;
