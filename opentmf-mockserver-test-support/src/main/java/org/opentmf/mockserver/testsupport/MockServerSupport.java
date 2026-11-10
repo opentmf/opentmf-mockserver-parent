@@ -117,37 +117,42 @@ public class MockServerSupport
    * <p>The bound port is then checked: a {@code PUT /mockserver/status} to {@link #baseUrl()} must
    * be answered by this server. On macOS the wildcard bind can share its port with another
    * process listening on 127.0.0.1, and loopback requests then reach that process instead of the
-   * mock. A shadowed port is released and the start retried on a new one, up to {@value
-   * #MAX_START_ATTEMPTS} attempts; after that the start fails with an {@link
-   * IllegalStateException} naming {@code MOCKSERVER-SUPPORT-PORT-SHADOW-1}.
+   * mock. A port that is not answered by this server is released and the start retried on a new
+   * one, up to {@value #MAX_START_ATTEMPTS} attempts; after that the start fails with an {@link
+   * IllegalStateException} naming {@code MOCKSERVER-SUPPORT-PORT-SHADOW-1}. Each failed attempt is
+   * logged at WARN with what answered instead: another listener ({@code FOREIGN_ANSWER}, {@code
+   * UNPARSABLE}) or no answer ({@code REFUSED}, {@code RESET}, {@code TIMEOUT}).
    */
   public MockServerSupport start() {
     if (server != null && server.isRunning()) {
       return this;
     }
-    List<Integer> shadowedPorts = new ArrayList<>();
+    List<String> failedProbes = new ArrayList<>();
     for (int attempt = 1; attempt <= MAX_START_ATTEMPTS; attempt++) {
       ClientAndServer candidate = ClientAndServer.startClientAndServer(0);
       int boundPort = candidate.getLocalPort();
-      if (PortIdentityProbe.answersAsMockServer(baseUrl(boundPort), boundPort)) {
+      PortIdentityProbe.Result probe = PortIdentityProbe.probe(baseUrl(boundPort), boundPort);
+      if (probe.isMockServer()) {
         server = candidate;
         port = boundPort;
         LOG.info("MockServerSupport started on port {}", port);
         return this;
       }
       candidate.stop();
-      shadowedPorts.add(boundPort);
+      failedProbes.add(boundPort + ": " + probe);
       LOG.warn(
-          "MockServerSupport port {} on localhost is answered by another listener (attempt {}/{})",
+          "MockServerSupport port {} on localhost is not answered by this mock server: {}"
+              + " (attempt {}/{})",
           boundPort,
+          probe,
           attempt,
           MAX_START_ATTEMPTS);
     }
     throw new IllegalStateException(
-        "MOCKSERVER-SUPPORT-PORT-SHADOW-1: every port MockServer bound ("
-            + shadowedPorts
-            + ") is answered on localhost by another listener, not by this mock server; "
-            + "another process listens on 127.0.0.1 on that port");
+        "MOCKSERVER-SUPPORT-PORT-SHADOW-1: no port MockServer bound is answered on localhost by"
+            + " this mock server "
+            + failedProbes
+            + "; FOREIGN_ANSWER means another process listens on 127.0.0.1 on that port");
   }
 
   /** Stop MockServer if running. Idempotent. */
