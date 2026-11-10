@@ -24,10 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Dependency currency: Jackson 3.3.0, Trivy 0.76.2 (the `docker` profile scan and the release
-  gate), `docker/login-action` v4.8.0, `sigstore/cosign-installer` v4.1.3.
+- Dependency currency: Jackson 3.3.0, classgraph 4.8.200, exec-maven-plugin 3.7.0, Trivy 0.76.2
+  (the `docker` profile scan and the release gate), `docker/login-action` v4.8.0,
+  `sigstore/cosign-installer` v4.1.3.
 - Held, by name (unchanged): Spring Boot 3.5.16 / Spring Framework 6.2.19, Testcontainers 1.21.4
-  and classgraph 4.8.199. Each is the newest of its line; the next lines are major migrations.
+  and classgraph 4.8.x. Each is the newest of its line; the next lines are major migrations.
 
 ## [2.1.16] - 2026-11-04
 
