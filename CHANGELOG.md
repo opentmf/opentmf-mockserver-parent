@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A response or forward template is refused when it is loaded, not accepted and then left
+  hanging.** Up to 2.1.16, an expectation with an `httpResponseTemplate` or an
+  `httpForwardTemplate` (Velocity, Mustache or JavaScript) was accepted with `201`, and every call
+  it matched then hung: this build ships no template engine, and the call ended in an
+  `UnsupportedOperationException` with no answer written. `PUT /mockserver/expectation` now
+  answers `400` naming the action type (`RESPONSE_TEMPLATE` or `FORWARD_TEMPLATE`) and adds
+  nothing from that load. A template expectation that still arrives through an initialization file
+  is answered at once with `501 Not Implemented` naming the action type. Static expectations and
+  callbacks are unchanged.
 - **The port-shadow WARN names what answered.** In 2.1.16, `MockServerSupport.start()` logged
   "answered by another listener" for every failed identity probe, so a log could not tell a
   foreign process from a connection that was refused, reset or timed out. The probe now returns a

@@ -1,6 +1,7 @@
 package org.mockserver.mock.action.http;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -138,8 +139,8 @@ public class HttpActionHandler {
           }
         case RESPONSE_TEMPLATE:
           {
-            throw new UnsupportedOperationException(
-                "RESPONSE_TEMPLATE action type is not supported in this build");
+            writeUnservableActionResponse(request, responseWriter, action, synchronous);
+            break;
           }
         case RESPONSE_CLASS_CALLBACK:
           {
@@ -200,8 +201,8 @@ public class HttpActionHandler {
           }
         case FORWARD_TEMPLATE:
           {
-            throw new UnsupportedOperationException(
-                "FORWARD_TEMPLATE action type is not supported in this build");
+            writeUnservableActionResponse(request, responseWriter, action, synchronous);
+            break;
           }
         case FORWARD_CLASS_CALLBACK:
           {
@@ -493,6 +494,33 @@ public class HttpActionHandler {
 
       returnNotFound(responseWriter, request, null);
     }
+  }
+
+  /**
+   * Answers a call matched by an expectation whose action this build cannot serve (only an
+   * initialization file can still load one; the API refuses it at load) with a 501 naming the
+   * action type, so the call never hangs.
+   */
+  private void writeUnservableActionResponse(
+      HttpRequest request, ResponseWriter responseWriter, Action action, boolean synchronous) {
+    String message = action.getType() + " action type is not supported in this build";
+    mockServerLogger.logEvent(
+        new LogEntry()
+            .setType(WARN)
+            .setLogLevel(Level.WARN)
+            .setCorrelationId(request.getLogCorrelationId())
+            .setHttpRequest(request)
+            .setMessageFormat(message + "; answered with 501")
+            .setExpectationId(action.getExpectationId()));
+    writeResponseActionResponse(
+        response()
+            .withStatusCode(NOT_IMPLEMENTED.code())
+            .withReasonPhrase(NOT_IMPLEMENTED.reasonPhrase())
+            .withBody(message),
+        responseWriter,
+        request,
+        action,
+        synchronous);
   }
 
   private void handleAnyException(

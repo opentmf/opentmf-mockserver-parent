@@ -18,7 +18,9 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -259,7 +261,34 @@ public class HttpState {
     throw new UnsupportedOperationException("OpenAPI support not available");
   }
 
+  /**
+   * The action types this build accepts in an expectation but cannot serve: no template engine
+   * ships with it. An expectation using one is refused when it is loaded.
+   */
+  static final Set<Action.Type> UNSERVABLE_ACTION_TYPES =
+      EnumSet.of(Action.Type.RESPONSE_TEMPLATE, Action.Type.FORWARD_TEMPLATE);
+
+  /**
+   * Refuses an expectation whose action this build cannot serve, naming the action type, so that
+   * it is never accepted and then left without an answer.
+   *
+   * @throws IllegalArgumentException naming the action type
+   */
+  public static void requireServableAction(Expectation expectation) {
+    Action action = expectation.getAction();
+    if (action != null && UNSERVABLE_ACTION_TYPES.contains(action.getType())) {
+      throw new IllegalArgumentException(
+          action.getType()
+              + " action type is not supported in this build; the expectation for "
+              + expectation.getHttpRequest()
+              + " is refused");
+    }
+  }
+
   public List<Expectation> add(Expectation... expectations) {
+    for (Expectation expectation : expectations) {
+      requireServableAction(expectation);
+    }
     List<Expectation> upsertedExpectations = new ArrayList<>();
     for (Expectation expectation : expectations) {
       RequestDefinition requestDefinition = expectation.getHttpRequest();
@@ -631,9 +660,13 @@ public class HttpState {
 
         if (controlPlaneRequestAuthenticated(request, responseWriter)) {
           List<Expectation> upsertedExpectations = new ArrayList<>();
-          for (Expectation expectation :
+          Expectation[] loaded =
               getExpectationSerializer()
-                  .deserializeArray(request.getBodyAsJsonOrXmlString(), false)) {
+                  .deserializeArray(request.getBodyAsJsonOrXmlString(), false);
+          for (Expectation expectation : loaded) {
+            requireServableAction(expectation);
+          }
+          for (Expectation expectation : loaded) {
             if (!warDeployment || validateSupportedFeatures(expectation, request, responseWriter)) {
               upsertedExpectations.addAll(add(expectation));
             }
