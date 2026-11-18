@@ -88,7 +88,13 @@ MockServer supports defining expectations from OpenAPI specifications. This requ
 MockServer supports dynamic response and forward templates using JavaScript (Nashorn/GraalJS) or
 Apache Velocity. These add significant runtime weight.
 
-- `RESPONSE_TEMPLATE` and `FORWARD_TEMPLATE` action types throw `UnsupportedOperationException`.
+- An expectation with an `httpResponseTemplate` or an `httpForwardTemplate` (Velocity, Mustache or
+  JavaScript) is refused when it is loaded through `PUT /mockserver/expectation`: the answer is a
+  `400` naming the action type (`RESPONSE_TEMPLATE` or `FORWARD_TEMPLATE`), and nothing in that
+  load is added.
+- An initialization file cannot be answered with a `400`, so such an expectation can still be
+  loaded from one. A call it matches is then answered at once with a `501 Not Implemented` naming
+  the action type.
 
 ### XML / XPath / XML Schema Body Matching
 
