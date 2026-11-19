@@ -96,6 +96,12 @@
       <artifactId>json-path</artifactId>
       <version>${json-path.version}</version>
     </dependency>
+    <!-- Mustache response templates -->
+    <dependency>
+      <groupId>com.samskivert</groupId>
+      <artifactId>jmustache</artifactId>
+      <version>${jmustache.version}</version>
+    </dependency>
 
     <!-- JSON Patch + Merge Patch (Jackson 3) -->
     <dependency>
