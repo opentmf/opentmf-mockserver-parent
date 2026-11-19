@@ -1085,7 +1085,8 @@ ITs). See the [full guide](docs/TEST_SUPPORT.md#two-lifecycle-modes) for trade-o
 
 This project embeds a tailored subset of MockServer. For a detailed breakdown of included
 features (HTTP mocking, JSON matching, TLS, callbacks, forwarding) and excluded features
-(OpenAPI, XML/XPath matching, dashboard UI, SOCKS proxy, template engines, Prometheus), see
+(OpenAPI, XML/XPath matching, dashboard UI, SOCKS proxy, template engines but Mustache response
+templates, Prometheus), see
 [MOCKSERVER.md](opentmf-mockserver/MOCKSERVER.md).
 
 ## Acknowledgments
@@ -1096,7 +1097,9 @@ This project includes source code from [MockServer](https://github.com/mock-serv
 contains code originally from the `mockserver-core`, `mockserver-netty`, and
 `mockserver-client-java` modules of that project. The code has been modified to migrate from
 Jackson 2.x to Jackson 3.x and to remove features not needed for TMF mock usage (UI dashboard,
-proxy/SOCKS, template engines, XML/XPath body matching, OpenAPI/Swagger, and Prometheus metrics).
+proxy/SOCKS, the Velocity and JavaScript template engines and forward templates, XML/XPath body
+matching, OpenAPI/Swagger, and Prometheus metrics). The Mustache response-template engine of
+upstream 5.15.0 is kept, without its `xPath` lambda.
 
 ## Release Notes
 

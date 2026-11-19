@@ -83,18 +83,70 @@ MockServer supports defining expectations from OpenAPI specifications. This requ
 - `PUT /mockserver/openapi` returns **400 Bad Request**.
 - `HttpRequestsPropertiesMatcher` throws `UnsupportedOperationException` for OpenAPI definitions.
 
-### Template Engines (JavaScript / Velocity)
+### Template Engines (JavaScript / Velocity, and Mustache forward templates)
 
 MockServer supports dynamic response and forward templates using JavaScript (Nashorn/GraalJS) or
-Apache Velocity. These add significant runtime weight.
+Apache Velocity. These add significant runtime weight. Of the template types, this build serves
+**Mustache response templates** only (see
+[Mustache response templates](#mustache-response-templates)).
 
-- An expectation with an `httpResponseTemplate` or an `httpForwardTemplate` (Velocity, Mustache or
-  JavaScript) is refused when it is loaded through `PUT /mockserver/expectation`: the answer is a
-  `400` naming the action type (`RESPONSE_TEMPLATE` or `FORWARD_TEMPLATE`), and nothing in that
+- Any other template is refused when it is loaded through `PUT /mockserver/expectation`: a
+  Velocity or JavaScript `httpResponseTemplate`, and an `httpForwardTemplate` of every type,
+  Mustache included. The answer is a `400` naming the action type and the template type (for
+  example `RESPONSE_TEMPLATE (VELOCITY)` or `FORWARD_TEMPLATE (MUSTACHE)`), and nothing in that
   load is added.
 - An initialization file cannot be answered with a `400`, so such an expectation can still be
   loaded from one. A call it matches is then answered at once with a `501 Not Implemented` naming
-  the action type.
+  the action type and the template type.
+
+### Mustache response templates
+
+An `httpResponseTemplate` with `"templateType": "MUSTACHE"` is served with upstream MockServer
+5.15.0's Mustache engine ([jmustache](https://github.com/samskivert/jmustache) 1.16). The template
+renders the JSON of a response (`statusCode`, `headers`, `body`, ...), rendered anew from each
+call's own request:
+
+```json
+{
+  "httpRequest": { "method": "POST", "path": "/push/{id}",
+                   "pathParameters": { "id": [".*"] } },
+  "httpResponseTemplate": {
+    "templateType": "MUSTACHE",
+    "template": "{\"statusCode\": 202, \"headers\": {\"X-Correlation-Id\": [\"{{request.headers.X-Correlation-Id.0}}\"]}, \"body\": {\"correlationId\": \"{{#jsonPath}}$.correlationId{{/jsonPath}}{{jsonPathResult}}\", \"id\": \"{{request.pathParameters.id.0}}\"}}"
+  }
+}
+```
+
+What a template can read:
+
+- `request.method`, `request.path`, `request.body` (the whole body as text), `request.secure`,
+  `request.keepAlive`, `request.localAddress`, `request.remoteAddress`, `request.cookies.<name>`.
+- `request.headers.<Name>`, `request.queryStringParameters.<name>` and
+  `request.pathParameters.<name>` are lists: take the first value with `.0`; without it the list
+  is rendered as `[value]`. A path parameter is filled only when the expectation's request declares
+  it under `pathParameters`.
+- A JSON body field: `{{#jsonPath}}$.field{{/jsonPath}}{{jsonPathResult}}`. A missing field, or a
+  body that is not JSON, renders empty.
+- `now`, `now_epoch`, `now_iso_8601`, `now_rfc_1123`, `uuid` (in this build an id from the
+  server's id generator, not an RFC 4122 UUID), `rand_int`, `rand_int_100`, `rand_bytes`,
+  `rand_bytes_32`, `rand_bytes_64`, `rand_bytes_128`.
+- `mockserver.mustacheDisallowedText` (a comma-separated list) refuses, at call time, a template
+  containing any of its strings.
+
+What does not fit:
+
+- **`{{value}}` escapes for HTML, not for JSON.** `"`, `<`, `>` and `&` come out as `&quot;`,
+  `&lt;`, `&gt;` and `&amp;`: the answer stays valid JSON but carries the entity, not the
+  character, and a backslash is lost. `{{{value}}}` does not escape at all, so a value with a `"`
+  breaks the response JSON and the call is answered `404`. Echo values such as ids and correlation
+  ids are safe; free text is not. To return the request's JSON body as it came, use
+  `"body": {{{request.body}}}`.
+- A JSON field that is not a string renders as Java text: `42` becomes `"42"` and an object
+  becomes `{x=1}`.
+- Header names are matched exactly as the client sent them: `{{request.headers.x-trace-id.0}}` is
+  empty for a request that sent `X-Trace-Id`.
+- There is no `xPath` lambda (this build vendors no XPath evaluator); it renders empty.
+- A template that renders no valid response is answered `404`, at once.
 
 ### XML / XPath / XML Schema Body Matching
 
