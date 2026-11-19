@@ -18,9 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -262,11 +260,30 @@ public class HttpState {
   }
 
   /**
-   * The action types this build accepts in an expectation but cannot serve: no template engine
-   * ships with it. An expectation using one is refused when it is loaded.
+   * Whether this build can serve the action. Every action is served except a template one other
+   * than a Mustache response template: no Velocity or JavaScript engine ships with this build,
+   * and no forward template of any type is served.
    */
-  static final Set<Action.Type> UNSERVABLE_ACTION_TYPES =
-      EnumSet.of(Action.Type.RESPONSE_TEMPLATE, Action.Type.FORWARD_TEMPLATE);
+  public static boolean isServableAction(Action action) {
+    if (action == null) {
+      return true;
+    }
+    if (action.getType() == Action.Type.FORWARD_TEMPLATE) {
+      return false;
+    }
+    return action.getType() != Action.Type.RESPONSE_TEMPLATE
+        || ((HttpTemplate) action).getTemplateType() == HttpTemplate.TemplateType.MUSTACHE;
+  }
+
+  /**
+   * The name of an action for a refusal: its type, and for a template its template type.
+   */
+  public static String describeAction(Action action) {
+    if (action instanceof HttpTemplate template) {
+      return action.getType() + " (" + template.getTemplateType() + ")";
+    }
+    return String.valueOf(action.getType());
+  }
 
   /**
    * Refuses an expectation whose action this build cannot serve, naming the action type, so that
@@ -276,9 +293,9 @@ public class HttpState {
    */
   public static void requireServableAction(Expectation expectation) {
     Action action = expectation.getAction();
-    if (action != null && UNSERVABLE_ACTION_TYPES.contains(action.getType())) {
+    if (!isServableAction(action)) {
       throw new IllegalArgumentException(
-          action.getType()
+          describeAction(action)
               + " action type is not supported in this build; the expectation for "
               + expectation.getHttpRequest()
               + " is refused");

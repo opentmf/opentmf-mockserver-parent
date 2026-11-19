@@ -55,6 +55,7 @@ public class HttpActionHandler {
   private final Scheduler scheduler;
   private MockServerLogger mockServerLogger;
   private HttpResponseActionHandler httpResponseActionHandler;
+  private HttpResponseTemplateActionHandler httpResponseTemplateActionHandler;
   private HttpResponseClassCallbackActionHandler httpResponseClassCallbackActionHandler;
   private HttpResponseObjectCallbackActionHandler httpResponseObjectCallbackActionHandler;
   private HttpForwardActionHandler httpForwardActionHandler;
@@ -139,7 +140,26 @@ public class HttpActionHandler {
           }
         case RESPONSE_TEMPLATE:
           {
-            writeUnservableActionResponse(request, responseWriter, action, synchronous);
+            if (!HttpState.isServableAction(action)) {
+              writeUnservableActionResponse(request, responseWriter, action, synchronous);
+              break;
+            }
+            scheduler.schedule(
+                () ->
+                    handleAnyException(
+                        request,
+                        responseWriter,
+                        synchronous,
+                        action,
+                        () -> {
+                          final HttpResponse response =
+                              getHttpResponseTemplateActionHandler()
+                                  .handle((HttpTemplate) action, request);
+                          writeResponseActionResponse(
+                              response, responseWriter, request, action, synchronous);
+                          expectationPostProcessor.run();
+                        }),
+                synchronous);
             break;
           }
         case RESPONSE_CLASS_CALLBACK:
@@ -503,7 +523,8 @@ public class HttpActionHandler {
    */
   private void writeUnservableActionResponse(
       HttpRequest request, ResponseWriter responseWriter, Action action, boolean synchronous) {
-    String message = action.getType() + " action type is not supported in this build";
+    String message =
+        HttpState.describeAction(action) + " action type is not supported in this build";
     mockServerLogger.logEvent(
         new LogEntry()
             .setType(WARN)
@@ -763,6 +784,14 @@ public class HttpActionHandler {
       httpResponseActionHandler = new HttpResponseActionHandler();
     }
     return httpResponseActionHandler;
+  }
+
+  private HttpResponseTemplateActionHandler getHttpResponseTemplateActionHandler() {
+    if (httpResponseTemplateActionHandler == null) {
+      httpResponseTemplateActionHandler =
+          new HttpResponseTemplateActionHandler(mockServerLogger, configuration);
+    }
+    return httpResponseTemplateActionHandler;
   }
 
   private HttpResponseClassCallbackActionHandler getHttpResponseClassCallbackActionHandler() {

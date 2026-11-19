@@ -7,17 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.1.17] - 2026-11-09
 
+### Added
+
+- **Mustache response templates.** An `httpResponseTemplate` with `"templateType": "MUSTACHE"` is
+  served with upstream MockServer 5.15.0's Mustache engine (jmustache 1.16, about 81 KB, no
+  further dependencies), so a stand-in can echo a request's JSON body field, path, path or query
+  parameter, or header into its answer. The engine is upstream's without its `xPath` lambda.
+  `{{value}}` escapes for HTML, not for JSON, so free text with `"`, `<`, `>` or `&` does not come
+  back as sent; ids and correlation ids do. What a template can read and what does not fit is in
+  `MOCKSERVER.md`, "Mustache response templates". Velocity and JavaScript templates, and every
+  forward template, are still refused.
+
 ### Fixed
 
-- **A response or forward template is refused when it is loaded, not accepted and then left
+- **A template expectation is served or refused when it is loaded, never accepted and then left
   hanging.** Up to 2.1.16, an expectation with an `httpResponseTemplate` or an
   `httpForwardTemplate` (Velocity, Mustache or JavaScript) was accepted with `201`, and every call
-  it matched then hung: this build ships no template engine, and the call ended in an
-  `UnsupportedOperationException` with no answer written. `PUT /mockserver/expectation` now
-  answers `400` naming the action type (`RESPONSE_TEMPLATE` or `FORWARD_TEMPLATE`) and adds
-  nothing from that load. A template expectation that still arrives through an initialization file
-  is answered at once with `501 Not Implemented` naming the action type. Static expectations and
-  callbacks are unchanged.
+  it matched then hung: this build shipped no template engine, and the call ended in an
+  `UnsupportedOperationException` with no answer written. A Mustache response template is now
+  served (see Added). Every other template, a Velocity or JavaScript response template and a
+  forward template of any type, is refused by `PUT /mockserver/expectation` with `400` naming the
+  action type and the template type (for example `RESPONSE_TEMPLATE (VELOCITY)`), and nothing
+  from that load is added. Such a template that still arrives through an initialization file is
+  answered at once with `501 Not Implemented` naming the same. Static expectations and callbacks
+  are unchanged.
 - **The port-shadow WARN names what answered.** In 2.1.16, `MockServerSupport.start()` logged
   "answered by another listener" for every failed identity probe, so a log could not tell a
   foreign process from a connection that was refused, reset or timed out. The probe now returns a

@@ -22,8 +22,8 @@ import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.integration.ClientAndServer;
 
 /**
- * OTMF-MOCKSERVER-RESPONSE-TEMPLATE-ACCEPTED-THEN-HANGS-1: this build serves no response or
- * forward templates. An expectation carrying one is refused at load with a 400 naming the action
+ * OTMF-MOCKSERVER-RESPONSE-TEMPLATE-ACCEPTED-THEN-HANGS-1: this build serves no forward template
+ * and no response template but a Mustache one. An expectation carrying one is refused at load with a 400 naming the action
  * type, never accepted with 201 and then left hanging; a call to its path is answered at once.
  *
  * <p>Runs during {@code mvn integration-test} or {@code mvn verify} (not during {@code mvn test}).
@@ -70,8 +70,9 @@ class UnsupportedActionRefusedAtLoadIT {
         BodyHandlers.ofString());
   }
 
+  /** A Mustache response template is served; see {@code MustacheResponseTemplateIT}. */
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"VELOCITY", "MUSTACHE", "JAVASCRIPT"})
+  @ValueSource(strings = {"VELOCITY", "JAVASCRIPT"})
   void aResponseTemplate_isRefusedAtLoad_andItsPathAnswersAtOnce(String kind) throws Exception {
     String path = "/template/response/" + kind.toLowerCase();
     var refused =
@@ -83,7 +84,7 @@ class UnsupportedActionRefusedAtLoadIT {
                 + "}");
 
     assertEquals(400, refused.statusCode(), refused.body());
-    assertTrue(refused.body().contains("RESPONSE_TEMPLATE"), refused.body());
+    assertTrue(refused.body().contains("RESPONSE_TEMPLATE (" + kind + ")"), refused.body());
     assertEquals(404, get(base, path).statusCode());
   }
 
@@ -100,7 +101,7 @@ class UnsupportedActionRefusedAtLoadIT {
                 + "}");
 
     assertEquals(400, refused.statusCode(), refused.body());
-    assertTrue(refused.body().contains("FORWARD_TEMPLATE"), refused.body());
+    assertTrue(refused.body().contains("FORWARD_TEMPLATE (" + kind + ")"), refused.body());
     assertEquals(404, get(base, path).statusCode());
   }
 
@@ -137,7 +138,7 @@ class UnsupportedActionRefusedAtLoadIT {
    * of hanging.
    */
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"VELOCITY", "MUSTACHE", "JAVASCRIPT"})
+  @ValueSource(strings = {"VELOCITY", "JAVASCRIPT"})
   void aTemplateFromAnInitializationFile_isAnsweredWith501_neverHangs(
       String kind, @TempDir Path dir) throws Exception {
     Path file = dir.resolve("expectations.json");
