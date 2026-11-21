@@ -46,6 +46,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The native BoringSSL provider no longer reaches consumers.** `netty-tcnative-boringssl-static`
+  is now an `optional` dependency of `opentmf-mockserver`. Up to 2.1.16 a consumer that used
+  `opentmf-mockserver` or `opentmf-mockserver-test-support` at **test** scope still shipped its
+  five native classifier jars (linux-x86_64, linux-aarch_64, osx-x86_64, osx-aarch_64,
+  windows-x86_64, about 6 MB) in its **runtime** classpath: Netty's BOM, imported by Spring Boot,
+  manages those classifier coordinates at `runtime` scope, and Maven applies a managed scope to
+  transitive dependencies over the inherited `test` scope. The standalone server and its image
+  keep the native provider. A mock server embedded in a consumer's tests now uses the JDK TLS
+  provider (HTTPS and HTTP/2 over ALPN work on Java 17+). A consumer that relied on getting
+  `netty-tcnative-boringssl-static` or `netty-tcnative-classes` through this library (for
+  `SslProvider.OPENSSL`, or `io.netty.internal.tcnative` classes) must now declare it itself.
 - Dependency currency: Jackson 3.3.0, classgraph 4.8.200, exec-maven-plugin 3.7.0, Trivy 0.76.2
   (the `docker` profile scan and the release gate), `docker/login-action` v4.8.0,
   `sigstore/cosign-installer` v4.1.3.

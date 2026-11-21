@@ -59,11 +59,16 @@
       <artifactId>netty-transport</artifactId>
       <version>${netty.version}</version>
     </dependency>
+    <!-- Native BoringSSL provider for the standalone server and its image only. Optional, so it
+         never reaches a consumer: Netty's BOM manages the five classifier jars at runtime scope,
+         which would otherwise lift them out of a consumer's test scope into its shipped jar. An
+         embedded mock server falls back to the JDK TLS provider (NettySslContextFactory). -->
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-tcnative-boringssl-static</artifactId>
       <version>${netty-tcnative.version}</version>
       <scope>runtime</scope>
+      <optional>true</optional>
     </dependency>
 
     <!-- TLS / Crypto -->
