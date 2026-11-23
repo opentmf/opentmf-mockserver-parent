@@ -32,7 +32,7 @@ env:
   RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
   # Same scanner and settings as the local `docker` profile's trivy-gate.
   TRIVY_IMAGE: aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
-  SKOPEO_IMAGE: quay.io/skopeo/stable:v1.22.3-immutable@sha256:c0ee1f4edca5c01cb8d5611124f92f3cc47196ecab68aee5d0f90834e00574d5
+  SKOPEO_IMAGE: quay.io/skopeo/stable:v1.25.1-immutable@sha256:497c4983a5dd1bfb85d953edabb534f6d34ddee7db19871d45a3f8eff0173281
 
 jobs:
   build:

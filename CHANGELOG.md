@@ -57,8 +57,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   provider (HTTPS and HTTP/2 over ALPN work on Java 17+). A consumer that relied on getting
   `netty-tcnative-boringssl-static` or `netty-tcnative-classes` through this library (for
   `SslProvider.OPENSSL`, or `io.netty.internal.tcnative` classes) must now declare it itself.
-- Dependency currency: Jackson 3.3.0, classgraph 4.8.200, exec-maven-plugin 3.7.0, Trivy 0.76.2
-  (the `docker` profile scan and the release gate), `docker/login-action` v4.8.0,
+- Dependency currency: Jackson 3.3.0, Netty 4.2.21.Final, netty-tcnative 2.0.86.Final,
+  Bouncy Castle 1.87, commons-lang3 3.22.0, classgraph 4.8.200, exec-maven-plugin 3.7.0,
+  sonar-maven-plugin 5.9.0.7382, Trivy 0.76.2 (the `docker` profile scan and the release gate),
+  skopeo v1.25.1 (the release workflow's image copy), `docker/login-action` v4.8.0,
   `sigstore/cosign-installer` v4.1.3.
 - Held, by name (unchanged): Spring Boot 3.5.16 / Spring Framework 6.2.19, Testcontainers 1.21.4
   and classgraph 4.8.x. Each is the newest of its line; the next lines are major migrations.
