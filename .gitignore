@@ -32,3 +32,6 @@ build/
 .vscode/
 /derby.log
 /.jpb/
+
+### graphify ###
+graphify-out/
