@@ -58,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `netty-tcnative-boringssl-static` or `netty-tcnative-classes` through this library (for
   `SslProvider.OPENSSL`, or `io.netty.internal.tcnative` classes) must now declare it itself.
 - Dependency currency: Jackson 3.3.0, Netty 4.2.21.Final, netty-tcnative 2.0.86.Final,
-  Bouncy Castle 1.87, commons-lang3 3.22.0, classgraph 4.8.200, exec-maven-plugin 3.7.0,
+  Bouncy Castle 1.87, commons-lang3 3.22.0, exec-maven-plugin 3.7.0,
   sonar-maven-plugin 5.9.0.7382, Trivy 0.76.2 (the `docker` profile scan and the release gate),
   skopeo v1.25.1 (the release workflow's image copy), `docker/login-action` v4.8.0,
   `sigstore/cosign-installer` v4.1.3.
@@ -73,8 +73,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `maven.version.ignore` property, so `mvn versions:display-property-updates` examines every
   version property. Unpinned, it resolved 2.25.x, which skips the properties declared in the
   parent pom but used only in a module (Spring, classgraph, Testcontainers, netty and others).
-- Held, by name: classgraph 4.8.200 (the newest 4.8; 5.x is a major line, 6.x needs Java 25 and
-  the project and image are Java 17) and versions-maven-plugin 2.24.0 (2.25.x skips module-only
+- **ClassGraph 5.0.2** (was 4.8.x). It finds the classpath resources an `initializationJsonPath`
+  glob such as `expectations/*.json` names, and the scan still covers what 4.x scanned by default:
+  the classpath and the non-system modules (ClassGraph 5 scans nothing it is not told to). The
+  server and image now ship ClassGraph's split jars: `classgraph`, `classgraph-base`,
+  `classgraph-classpath` and `classgraph-vfs`.
+- Held, by name: ClassGraph 6.x (it needs Java 25; the project and image are Java 17; 5.x is the
+  same API for Java 17 to 24) and versions-maven-plugin 2.24.0 (2.25.x skips module-only
   properties, above).
 
 ## [2.1.16] - 2026-11-04

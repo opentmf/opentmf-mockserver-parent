@@ -86,7 +86,9 @@ public class FilePath {
                       .setThrowable(throwable));
           throw new RuntimeException(throwable);
         }
-        try (ScanResult result = new ClassGraph().scan()) {
+        // ClassGraph 5 scans nothing unless told what to scan: these two are 4.x's default.
+        try (ScanResult result =
+            new ClassGraph().enableClasspath().enableNonSystemModules().scan()) {
           ResourceList resources =
               result.getResourcesWithExtension(StringUtils.substringAfterLast(filePath, "."));
           expandedFilePaths.addAll(
