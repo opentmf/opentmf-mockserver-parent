@@ -1046,6 +1046,8 @@ A sibling artifact `org.opentmf.mockserver:opentmf-mockserver-test-support` ship
 JUnit 5 helpers over the same server. Consumer integration tests should stop hand-rolling
 the `ClientAndServer` + `Dynamic*Callback` + JWKS + `@DynamicPropertySource` glue and use
 this module instead. One implementation, versioned in lockstep with the server.
+From 2.1.17 its Spring helpers are built against Spring Framework 7.1 (Spring Boot 4.2);
+a consumer on Spring Boot 3 / Spring 6 keeps `opentmf-mockserver-test-support` 2.1.16.
 
 **→ Full usage guide: [docs/TEST_SUPPORT.md](docs/TEST_SUPPORT.md)** — dependency setup,
 per-class vs JVM-shared modes, Spring Boot IT recipe, full builder references (TMF /
