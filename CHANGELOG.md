@@ -62,8 +62,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sonar-maven-plugin 5.9.0.7382, Trivy 0.76.2 (the `docker` profile scan and the release gate),
   skopeo v1.25.1 (the release workflow's image copy), `docker/login-action` v4.8.0,
   `sigstore/cosign-installer` v4.1.3.
-- Held, by name (unchanged): Spring Boot 3.5.16 / Spring Framework 6.2.19, Testcontainers 1.21.4
-  and classgraph 4.8.x. Each is the newest of its line; the next lines are major migrations.
+- **`opentmf-mockserver-test-support` is built against Spring Framework 7.1.0**, the line Spring
+  Boot 4.2.0 manages (was 6.2.19). Its only Spring type, `DynamicPropertyRegistry`, comes from
+  `spring-test`, still `provided` / `optional`. The module no longer declares `spring-boot-test`
+  or `spring-boot`: no code used either. A consumer on Spring Boot 3 / Spring 6 keeps
+  `opentmf-mockserver-test-support` 2.1.16.
+- Testcontainers 2.0.5 (was 1.21.4; test scope only, for the Keycloak integration test). Its JUnit
+  module is now `org.testcontainers:testcontainers-junit-jupiter`.
+- The build pins `versions-maven-plugin` 2.24.0 and declares the pre-release ignore string as the
+  `maven.version.ignore` property, so `mvn versions:display-property-updates` examines every
+  version property. Unpinned, it resolved 2.25.x, which skips the properties declared in the
+  parent pom but used only in a module (Spring, classgraph, Testcontainers, netty and others).
+- Held, by name: classgraph 4.8.200 (the newest 4.8; 5.x is a major line, 6.x needs Java 25 and
+  the project and image are Java 17) and versions-maven-plugin 2.24.0 (2.25.x skips module-only
+  properties, above).
 
 ## [2.1.16] - 2026-11-04
 

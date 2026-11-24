@@ -47,11 +47,12 @@ via the `opentmf-versions` BOM and let both artifacts resolve from there:
 </dependencies>
 ```
 
-Spring types (`spring-test`, `spring-boot-test`) are declared `provided` / `optional`
-in the module — non-Spring consumers get JUnit + Nimbus + the server jar without
-having Spring pulled in transitively. If your project already uses Spring, its
-`spring-test` and `spring-boot-test` are on the test classpath anyway and the
-`redirect*` helpers below just work.
+The one Spring type the module uses, `DynamicPropertyRegistry`, comes from `spring-test`,
+declared `provided` / `optional` — non-Spring consumers get JUnit + Nimbus + the server
+jar without having Spring pulled in transitively. If your project already uses Spring,
+its `spring-test` is on the test classpath anyway and the `redirect*` helpers below just
+work. The module is built against Spring Framework 7.1 (the line Spring Boot 4.2 manages);
+a consumer on Spring Boot 3 / Spring 6 keeps `opentmf-mockserver-test-support` 2.1.16.
 
 ## Two lifecycle modes
 
